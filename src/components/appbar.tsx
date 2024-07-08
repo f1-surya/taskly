@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { logout } from "@/auth";
+import { logout } from "@/lib/auth";
 import { ExitIcon } from "@radix-ui/react-icons";
 
 interface Props {

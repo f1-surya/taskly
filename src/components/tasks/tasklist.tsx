@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "@radix-ui/react-icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../ui/button";
@@ -34,35 +34,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { toast } from "sonner";
 
 dayjs.extend(relativeTime);
 
 interface Props {
-  tasks: TaskModel[];
+  tasks: Array<any>;
 }
 
 const formSchema = z.object({
   title: z.string().min(4, "Title must be at least 4 characters long"),
   description: z.string().optional(),
-  dueDate: z.date().min(new Date()).optional(),
 });
 
 export default function TaskList({ tasks }: Props) {
   const [task, setTask] = useState<TaskModel | null>(null);
   const [currTask, setCurrTask] = useState<TaskModel | null>(null);
+  const edit = useRef(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
+
+  async function saveTask(data: z.infer<typeof formSchema>) {
+    // @ts-ignore
+    data._id = currTask?._id;
+    const res = await fetch("/api/task", {
+      method: edit.current ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...data,
+        completed: false,
+      }),
+    });
+    if (res.status === 201) {
+      window.location.reload();
+    } else {
+      toast.error("Something went wrong");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {tasks.map((task) => (
         <div
           key={task._id}
           className="radius-6 bg-gray-100 w-[400px] sm:w-[500px] rounded-lg p-4 flex gap-4 shadow-inner cursor-pointer hover:bg-gray-200 transition-colors"
-          onClick={() => setTask(task)}
         >
-          <Checkbox checked={task.completed} onClick={(e) => {}} />
-          <div>
+          <Checkbox
+            defaultChecked={task.completed}
+            onCheckedChange={async (e) => {
+              const res = await fetch("/api/task", {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ completed: e, _id: task._id }),
+              });
+              if (res.status === 201) {
+                window.location.reload();
+              } else {
+                toast.error("Something went wrong");
+              }
+            }}
+          />
+          <div
+            className="w-full"
+            onClick={() => {
+              setTask(task);
+              edit.current = true;
+            }}
+          >
             <p className="text-2xl font-semibold">{task.title}</p>
             {task.description && (
               <p className="text-gray-700">{task.description}</p>
@@ -121,10 +164,7 @@ export default function TaskList({ tasks }: Props) {
             <DialogTitle>Add or edit task</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit((data) => console.log(data))}
-              className="gap-2"
-            >
+            <form onSubmit={form.handleSubmit(saveTask)} className="gap-2">
               <FormField
                 name="title"
                 render={({ field }) => (
@@ -148,19 +188,6 @@ export default function TaskList({ tasks }: Props) {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
-              <FormField
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Due date</FormLabel>
-                    <Input {...field} type="date" />
-                    <FormDescription>
-                      When should this task be completed?
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-                name="dueDate"
               />
               <DialogFooter className="gap-2 mt-2">
                 <Button onClick={() => setCurrTask(null)}>Close</Button>

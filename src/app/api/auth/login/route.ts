@@ -1,4 +1,4 @@
-import { login } from "@/auth";
+import { login } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {

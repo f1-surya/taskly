@@ -1,5 +1,5 @@
-import {login} from "@/auth";
-import client from "@/mongodb";
+import {login} from "@/lib/auth";
+import client from "@/lib/mongodb";
 import {randomBytes, scryptSync} from "crypto";
 
 export async function POST(req: Request) {
