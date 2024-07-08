@@ -1,11 +1,5 @@
-import {
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./form";
 import { Input } from "./input";
+import { Label } from "./label";
 
 interface Props {
   name: string;
@@ -13,21 +7,11 @@ interface Props {
   title: string;
 }
 
-export default function CustomField({
-  name,
-  title,
-  type = "text",
-}: Props) {
+export default function CustomField({ name, title, type = "text" }: Props) {
   return (
-    <FormField
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{title}</FormLabel>
-          <Input {...field} type={type} />
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div>
+      <Label htmlFor={name}>{title}</Label>
+      <Input type={type} id={name} name={name} required />
+    </div>
   );
 }

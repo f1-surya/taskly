@@ -57,7 +57,7 @@ export default function TaskList({ tasks }: Props) {
     <div className="flex flex-col gap-2">
       {tasks.map((task) => (
         <div
-          key={task.id}
+          key={task._id}
           className="radius-6 bg-gray-100 w-[400px] sm:w-[500px] rounded-lg p-4 flex gap-4 shadow-inner cursor-pointer hover:bg-gray-200 transition-colors"
           onClick={() => setTask(task)}
         >
@@ -177,7 +177,7 @@ export default function TaskList({ tasks }: Props) {
         onClick={() =>
           setCurrTask({
             title: "",
-            id: "",
+            _id: "",
             completed: false,
             createdAt: new Date(),
           })
