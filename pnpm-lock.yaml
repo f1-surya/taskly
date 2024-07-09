@@ -59,6 +59,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      lucide-react:
+        specifier: ^0.403.0
+        version: 0.403.0(react@18.3.1)
       mongodb:
         specifier: ^6.8.0
         version: 6.8.0
@@ -1502,6 +1505,11 @@ packages:
   lru-cache@10.3.0:
     resolution: {integrity: sha512-CQl19J/g+Hbjbv4Y3mFNNXFEL/5t/KCg8POCuUqd4rMKjGG+j1ybER83hxV58zL+dFI1PTkt3GNFSHRt+d8qEQ==}
     engines: {node: 14 || >=16.14}
+
+  lucide-react@0.403.0:
+    resolution: {integrity: sha512-ldD3NT444k4Mi+n+43xC8XaHr88MNdhOIApIE15r7O+PcVYEBXNOOFo904cBC6Hsja+zHc1lqw0mqUgBECeisw==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   memory-pager@1.5.0:
     resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
@@ -3745,6 +3753,10 @@ snapshots:
       js-tokens: 4.0.0
 
   lru-cache@10.3.0: {}
+
+  lucide-react@0.403.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   memory-pager@1.5.0: {}
 

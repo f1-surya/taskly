@@ -14,7 +14,7 @@ export default function AppBar({ name }: Props) {
     <div className="flex items-center justify-between w-full p-4 shadow-md bg-secondary">
       <div className="flex items-center gap-4 justify-start">
         <Image src="/logo.svg" alt="Logo" width={50} height={50} />
-        <h1 className="text-3xl font-semibold text-white">Task Manager</h1>
+        <h1 className="text-2xl font-semibold text-white">Task Manager</h1>
       </div>
       <div className="flex justify-center items-center gap-2">
         <Avatar>

@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth";
 import client from "@/lib/mongodb";
-import {ObjectId} from "mongodb";
+import { ObjectId } from "mongodb";
 
 export async function POST(req: Request) {
   try {
@@ -39,10 +39,31 @@ export async function PUT(req: Request) {
     delete task._id;
     const db = (await client.connect()).db("taskManager");
 
-    await db.collection("tasks").findOneAndUpdate({ _id: new ObjectId(id) }, { $set: task });
+    await db
+      .collection("tasks")
+      .findOneAndUpdate({ _id: new ObjectId(id) }, { $set: task });
     return Response.json(task, { status: 201 });
   } catch (e) {
     console.error(e);
+    return Response.json({ message: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { _id } = await req.json();
+    const session = await getSession();
+    if (!session) {
+      return Response.json({ message: "User not found" }, { status: 404 });
+    }
+    const db = (await client.connect()).db("taskManager");
+    await db.collection("tasks").deleteOne({ _id: new ObjectId(_id) });
+    return Response.json(
+      { message: "Task deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.log(error);
     return Response.json({ message: "Something went wrong" }, { status: 500 });
   }
 }
