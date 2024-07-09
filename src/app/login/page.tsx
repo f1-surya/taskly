@@ -41,6 +41,8 @@ export default function Login() {
               router.refresh();
             } else if (response.status === 404) {
               toast.error("User not found");
+            } else if (response.status === 401) {
+              toast.error("Incorrect password");
             }
           }}
         >

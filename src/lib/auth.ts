@@ -46,7 +46,7 @@ export async function decrypt(input: string): Promise<any> {
  */
 export async function login(
   formData: FormData
-): Promise<WithId<Document> | null> {
+): Promise<WithId<Document> | null | undefined> {
   // Verify credentials && get the user
   const user = {
     email: formData.get("email")!.toString(),
@@ -87,7 +87,7 @@ export async function login(
     delete userData.password;
     return userData;
   }
-  return null;
+  return undefined;
 }
 
 export async function logout() {

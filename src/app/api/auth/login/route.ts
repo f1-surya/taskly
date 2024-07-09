@@ -13,7 +13,9 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData();
     const userData = await login(form);
-    if (!userData) {
+    if (userData === undefined) {
+      return Response.json({ message: "Password is incorrect" }, { status: 401 });
+    } else if (userData === null) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
 
