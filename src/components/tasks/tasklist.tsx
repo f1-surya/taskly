@@ -136,6 +136,11 @@ export default function TaskList({ tasks }: Props) {
     }
   }
 
+  /**
+   * Asynchronously removes a task from the server.
+   *
+   * @return {Promise<void>} A promise that resolves when the task is removed.
+   */
   async function removeTask() {
     const res = await fetch(`/api/task`, {
       method: "DELETE",

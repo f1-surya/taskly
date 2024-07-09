@@ -2,6 +2,12 @@ import {login} from "@/lib/auth";
 import client from "@/lib/mongodb";
 import {randomBytes, scryptSync} from "crypto";
 
+/**
+ * Handles the POST request to create a new user account.
+ *
+ * @param {Request} req - The request object containing user data.
+ * @return {Response} A response object indicating success or failure of the user creation.
+ */
 export async function POST(req: Request) {
   try {
     const mongoClient = await client.connect();
