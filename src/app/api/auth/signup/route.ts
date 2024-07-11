@@ -36,13 +36,13 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     });
 
-    const data = await login(formData);
-    if (!data) {
-      return new Response(JSON.stringify({ message: "Something went wrong" }), {
-        status: 500,
-      });
-    }
-    return new Response(JSON.stringify(data), {
+    // const data = await login(formData);
+    // if (!data) {
+      // return new Response(JSON.stringify({ message: "Something went wrong" }), {
+        // status: 500,
+      // });
+    // }
+    return new Response(JSON.stringify({}), {
       status: 201,
     });
   } catch (error) {

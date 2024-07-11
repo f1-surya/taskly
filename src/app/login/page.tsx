@@ -1,14 +1,8 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import CustomField from "@/components/ui/customfield";
+import {Card} from "@/components/ui/card";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import LoginForm from "./LoginForm";
 
 export default function Login() {
-  const router = useRouter();
   return (
     <main className="flex min-h-screen flex-col sm:flex-row items-center justify-center gap-4">
       <div className="relative">
@@ -29,36 +23,7 @@ export default function Login() {
           height={50}
           className="mx-auto"
         />
-        <form
-          className="flex flex-col items-center gap-2"
-          action={async (form) => {
-            const response = await fetch("/api/auth/login", {
-              method: "POST",
-              body: form,
-            });
-            if (response.status === 200) {
-              router.push("/");
-              router.refresh();
-            } else if (response.status === 404) {
-              toast.error("User not found");
-            } else if (response.status === 401) {
-              toast.error("Incorrect password");
-            }
-          }}
-        >
-          <h1 className="text-3xl font-semibold">Login</h1>
-          <CustomField name="email" title="Email" type="email" />
-          <CustomField name="password" title="Password" type="password" />
-          <Button className="w-full mt-4 bg-blue-600" type="submit">
-            Login
-          </Button>
-          <p className="text-sm">
-            Don&apos;t have an account?{" "}
-            <a href="/signup" className="text-blue-700">
-              Signup
-            </a>
-          </p>
-        </form>
+        <LoginForm />
       </Card>
     </main>
   );
