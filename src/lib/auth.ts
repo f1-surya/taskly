@@ -1,6 +1,6 @@
 "use server";
 
-import { scryptSync, timingSafeEqual } from "crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import dayjs from "dayjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
@@ -92,10 +92,49 @@ export async function login(
       name: userData.name,
     });
     redirect("/");
-  } else {
-    return { password: true };
   }
-  return {};
+  return { password: true };
+}
+
+export async function signUp(
+  state: SignUpState | undefined,
+  formData: FormData
+): Promise<SignUpState> {
+  const db = (await client.connect()).db("taskManager");
+  const oldUser = await db
+    .collection("users")
+    .findOne({ email: formData.get("email") });
+  const fullname = formData.get("fullname")!.toString().trim();
+
+  if (oldUser) {
+    return { email: true };
+  }
+  if (formData.get("password") !== formData.get("confirmPassword")) {
+    return { match: true };
+  }
+  if (fullname.split(" ").length < 2) {
+    return { name: true };
+  }
+
+  const salt = randomBytes(16).toString("hex");
+  const hashedPassword = scryptSync(
+    formData.get("password")!.toString(),
+    salt,
+    64
+  ).toString("hex");
+
+  const data = await db.collection("users").insertOne({
+    email: formData.get("email"),
+    name: fullname,
+    password: `${hashedPassword}:${salt}`,
+    createdAt: new Date(),
+  });
+  await createSession({
+    email: formData.get("email"),
+    name: fullname,
+    uid: data.insertedId,
+  });
+  redirect("/");
 }
 
 export async function logout() {
@@ -115,7 +154,13 @@ export async function getSession(): Promise<{ [key: string]: any } | null> {
   return await decrypt(session);
 }
 
-type LoginState = {
+interface LoginState {
   email?: boolean;
   password?: boolean;
-};
+}
+
+interface SignUpState {
+  email?: boolean;
+  match?: boolean;
+  name?: boolean;
+}
