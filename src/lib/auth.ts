@@ -7,8 +7,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import client from "./mongodb";
 
-// Since this is not a production app I'm not using a real secret key.
-const secretKey = "Very_secret_key";
+const secretKey = process.env.SECRET_KEY ?? "Very_secret_key";
 const key = new TextEncoder().encode(secretKey);
 
 /**
