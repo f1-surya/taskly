@@ -181,7 +181,7 @@ export default function TaskList({ tasks }: Props) {
       {taskList.map((task) => (
         <div
           key={task._id}
-          className="radius-6 bg-gray-100 w-[400px] sm:w-[500px] rounded-lg p-4 flex gap-4 shadow-inner cursor-pointer hover:bg-gray-200 transition-colors"
+          className="radius-6 bg-gray-100 w-full sm:w-[500px] rounded-lg p-4 flex gap-4 shadow-inner cursor-pointer hover:bg-gray-200 transition-colors"
         >
           {/* Checkbox */}
           <Checkbox
@@ -196,7 +196,7 @@ export default function TaskList({ tasks }: Props) {
               edit.current = true;
             }}
           >
-            <p className="text-2xl font-semibold">{task.title}</p>
+            <p className="text-xl font-semibold">{task.title}</p>
             {/* Description */}
             {task.description && (
               <p className="text-gray-700">{task.description}</p>
@@ -326,7 +326,7 @@ export default function TaskList({ tasks }: Props) {
       </Dialog>
       {/* Button for adding a new task */}
       <Button
-        className="bg-blue-600 absolute bottom-6 right-6 w-12 h-12 rounded-3xl"
+        className="bg-blue-600 fixed bottom-6 right-6 w-12 h-12 rounded-3xl"
         onClick={() =>
           setCurrTask({
             title: "",

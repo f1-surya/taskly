@@ -4,13 +4,13 @@ import SignUpForm from "./form";
 
 export default function SignUp() {
   return (
-    <div className="flex min-h-screen flex-col sm:flex-row items-center justify-center gap-4 sm:gap-16 my-4">
+    <main className="flex min-h-screen flex-col sm:flex-row items-center justify-center sm:gap-24 bg-white">
       <Image
         src="/signup.png"
         alt="Logo"
-        width={300}
-        height={300}
-        className="bg-blend-multiply bg-secondary object-cover"
+        width={400}
+        height={400}
+        className="hidden sm:block"
       />
       <Card className="p-12">
         <Image
@@ -22,6 +22,6 @@ export default function SignUp() {
         />
         <SignUpForm />
       </Card>
-    </div>
+    </main>
   );
 }

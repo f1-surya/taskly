@@ -2,6 +2,12 @@ import Image from "next/image";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { logout } from "@/lib/auth";
 import { ExitIcon } from "@radix-ui/react-icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 interface Props {
   name: string;
@@ -17,19 +23,22 @@ export default function AppBar({ name }: Props) {
         <h1 className="text-2xl font-semibold text-white">Task Manager</h1>
       </div>
       <div className="flex justify-center items-center gap-2">
-        <Avatar>
-          <AvatarFallback>{names[0][0] + names[1][0]}</AvatarFallback>
-        </Avatar>
-        <form
-          action={async () => {
-            "use server";
-            await logout();
-          }}
-        >
-          <button className="bg-white rounded-3xl p-3" type="submit">
-            <ExitIcon color="black" />
-          </button>
-        </form>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Avatar>
+              <AvatarFallback>{names[0][0] + names[1][0]}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>
+              <form action={logout}>
+                <button type="submit" className="flex items-center gap-2">
+                  <ExitIcon color="black" /> Logout
+                </button>
+              </form>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
