@@ -1,3 +1,5 @@
+// @v// @vitest-environment node
+
 import { scryptSync } from "crypto";
 import { describe, expect, it, vi } from "vitest";
 import { createSession, decrypt, encrypt, login, logout, signUp } from "./auth";
