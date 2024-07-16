@@ -34,7 +34,11 @@ function LoginButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button className="w-full mt-4 bg-blue-600" type="submit">
+    <Button
+      className="w-full mt-4 bg-blue-600"
+      type="submit"
+      disabled={pending}
+    >
       {pending ? "Logging in..." : "Login"}
     </Button>
   );
