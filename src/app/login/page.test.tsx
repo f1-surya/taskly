@@ -7,11 +7,23 @@ vi.mock("react-dom", () => ({
   useFormStatus: () => ({ pending: false }),
 }));
 
-test("Check login page", async () => {
+test("Test login page", async () => {
   render(<Login />);
   const email = screen.getByLabelText("Email");
   const password = screen.getByLabelText("Password");
-  fireEvent.change(email, { target: { value: "some@email.com" } });
-  fireEvent.change(password, { target: { value: "password" } });
-  fireEvent.keyDown(email, { key: "Enter", code: "Enter" });  
+  expect(email).toBeDefined()
+  expect(password).toBeDefined()
 });
+
+vi.clearAllMocks();
+vi.mock('react-dom', () => ({
+  useFormState: () => [{email: true}, '/action'],
+  useFormStatus: () => ({ pending: true }),}))
+
+test("Test Errors", () => {
+  render(<Login />);
+  const email = screen.getAllByText("Email not found");
+  const loggingIn = screen.getAllByText("Logging in...");
+  expect(email).toBeDefined();
+  expect(loggingIn).toBeDefined();
+})

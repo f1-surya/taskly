@@ -43,7 +43,7 @@ export async function decrypt(input: string): Promise<any> {
  *
  * @param {Object} data - The data to create the session with.
  */
-async function createSession(data: { [key: string]: any }) {
+export async function createSession(data: { [key: string]: any }) {
   const session = await encrypt(data);
 
   const date = new Date();
