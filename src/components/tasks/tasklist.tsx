@@ -1,6 +1,6 @@
 "use client";
 
-import TaskModel from "@/models/task";
+import { ITask } from "@/models/task";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "@radix-ui/react-icons";
 import dayjs from "dayjs";
@@ -63,8 +63,8 @@ if (typeof window !== "undefined") {
  */
 export default function TaskList({ tasks }: Props) {
   const [taskList, setTaskList] = useState(tasks);
-  const [task, setTask] = useState<TaskModel | null>(null);
-  const [currTask, setCurrTask] = useState<TaskModel | null>(null);
+  const [task, setTask] = useState<ITask | null>(null);
+  const [currTask, setCurrTask] = useState<ITask | null>(null);
   const [filter, setFilter] = useState<string>(defaultFilter ?? "All");
   const [deleteTask, setDeleteTask] = useState(null);
   const edit = useRef(false);
@@ -93,16 +93,15 @@ export default function TaskList({ tasks }: Props) {
     if (edit.current) {
       // @ts-ignore
       data._id = currTask?._id;
+      // @ts-ignore
+      data.completed = currTask?.completed;
     }
     const res = await fetch("/api/task", {
       method: edit.current ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...data,
-        completed: false,
-      }),
+      body: JSON.stringify(data),
     });
     edit.current = false;
     if (res.status === 201) {
@@ -115,10 +114,10 @@ export default function TaskList({ tasks }: Props) {
   /**
    * Changes the status of a task on the server.
    *
-   * @param {TaskModel} task - The task to change the status of.
+   * @param {ITask} task - The task to change the status of.
    * @return {Promise<void>} A promise that resolves when the task's status is changed.
    */
-  async function changeStatus(task: TaskModel) {
+  async function changeStatus(task: ITask) {
     const res = await fetch("/api/task", {
       method: "PUT",
       headers: {
@@ -320,7 +319,9 @@ export default function TaskList({ tasks }: Props) {
           <DialogTitle>Are you sure you want to delete this task?</DialogTitle>
           <DialogFooter>
             <Button>No</Button>
-            <Button className="bg-red-700" onClick={removeTask}>Yes</Button>
+            <Button className="bg-red-700" onClick={removeTask}>
+              Yes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -330,7 +331,6 @@ export default function TaskList({ tasks }: Props) {
         onClick={() =>
           setCurrTask({
             title: "",
-            _id: "",
             completed: false,
             createdAt: new Date(),
           })

@@ -1,8 +1,15 @@
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import LoginForm from "./LoginForm";
+import {getSession} from "@/lib/auth";
+import {redirect} from "next/navigation";
 
-export default function Login() {
+export default async function Login() {
+  const session = await getSession();
+  if (session) {
+    redirect("/");
+  }
+
   return (
     <main className="flex min-h-screen flex-col sm:flex-row items-center justify-center gap-24 bg-white">
       <Image

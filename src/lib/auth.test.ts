@@ -1,42 +1,12 @@
 // @v// @vitest-environment node
 
 import { scryptSync } from "crypto";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createSession, decrypt, encrypt, login, logout, signUp } from "./auth";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import {redirect} from "next/navigation";
-
-const users: { [key: string]: any } = {
-  "test@example.com": {
-    email: "test@example.com",
-    password: scryptSync("password123", "salt", 64).toString("hex") + ":salt",
-    name: "Test User",
-    _id: "123",
-  },
-  "existinguser@example.com": {
-    email: "existinguser@example.com",
-    password: scryptSync("password123", "salt", 64).toString("hex") + ":salt",
-    name: "Test User",
-    _id: "123",
-  },
-};
-
-vi.mock("./mongodb", () => ({
-  default: {
-    connect: () =>
-      new Promise((resolve) => {
-        resolve({
-          db: (dbName: string) => ({
-            collection: () => ({
-              findOne: ({ email }: { email: string }) => users[email],
-              insertOne: vi.fn().mockResolvedValue({ insertedId: "123" }),
-            }),
-          }),
-        });
-      }),
-  },
-}));
+import { redirect } from "next/navigation";
+import { connect } from "mongoose";
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(() => ({
@@ -54,6 +24,10 @@ const secretKey = process.env.SECRET_KEY ?? "Very_secret_key";
 const key = new TextEncoder().encode(secretKey);
 
 describe("Auth Functions", () => {
+  beforeAll(async () => {
+    const uri = process.env.MONGO_URL ?? "mongodb://localhost:27017";
+    await connect(`${uri}/taskManager`);
+  });
   describe("encrypt", () => {
     it("should encrypt the payload", async () => {
       const payload = { data: "test" };
@@ -76,7 +50,7 @@ describe("Auth Functions", () => {
   //
   describe("createSession", () => {
     it("should create a session cookie", async () => {
-      const data = { email: "test@example.com", uid: "123", name: "Test User" };
+      const data = { email: "newuser@example.com", uid: "123", name: "Test User" };
       await createSession(data);
       expect(cookies).toHaveBeenCalled();
     });
@@ -85,7 +59,7 @@ describe("Auth Functions", () => {
   describe("login", () => {
     it("should login a user with correct credentials", async () => {
       const formData = new FormData();
-      formData.append("email", "test@example.com");
+      formData.append("email", "newuser@example.com");
       formData.append("password", "password123");
 
       const result = await login(undefined, formData);
@@ -103,7 +77,7 @@ describe("Auth Functions", () => {
 
     it("should return error if password is incorrect", async () => {
       const formData = new FormData();
-      formData.append("email", "test@example.com");
+      formData.append("email", "newuser@example.com");
       formData.append("password", "wrongpassword");
 
       const result = await login(undefined, formData);
