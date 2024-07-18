@@ -1,11 +1,11 @@
 "use server";
 
+import User from "@/models/user";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import dayjs from "dayjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import client from "./mongodb";
 
 const secretKey = process.env.SECRET_KEY ?? "Very_secret_key";
 const key = new TextEncoder().encode(secretKey);
@@ -71,9 +71,7 @@ export async function login(
     password: formData.get("password")!.toString(),
   };
 
-  const db = (await client.connect()).db("taskManager");
-  const userData = await db.collection("users").findOne({ email: user.email });
-
+  const userData = await User.findOne({ email: user.email });
   if (!userData) {
     return { email: true };
   }
@@ -99,10 +97,9 @@ export async function signUp(
   state: SignUpState | undefined,
   formData: FormData
 ): Promise<SignUpState> {
-  const db = (await client.connect()).db("taskManager");
-  const oldUser = await db
-    .collection("users")
-    .findOne({ email: formData.get("email") });
+  const oldUser = await User.findOne({
+    email: formData.get("email")!.toString(),
+  });
   const fullname = formData.get("fullname")!.toString().trim();
 
   if (oldUser) {
@@ -122,11 +119,10 @@ export async function signUp(
     64
   ).toString("hex");
 
-  const data = await db.collection("users").insertOne({
+  const data = await User.create({
     email: formData.get("email"),
     name: fullname,
     password: `${hashedPassword}:${salt}`,
-    createdAt: new Date(),
   });
   await createSession({
     email: formData.get("email"),
@@ -148,7 +144,7 @@ export async function logout() {
 export async function getSession(): Promise<{ [key: string]: any } | null> {
   const session = cookies().get("session")?.value;
   if (!session) {
-    redirect("/login");
+    return null;
   }
   return await decrypt(session);
 }
