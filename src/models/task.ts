@@ -1,14 +1,6 @@
+import { ITask } from "@/interfaces/task";
 import mongoose, { model, Schema } from "mongoose";
-
-export interface ITask {
-  title: string;
-  description?: string;
-  completed: boolean;
-  _id?: string;
-  dueDate?: Date;
-  user?: Schema.Types.ObjectId;
-  createdAt: Date;
-}
+import "server-only";
 
 const schema = new Schema<ITask>(
   {
@@ -16,6 +8,12 @@ const schema = new Schema<ITask>(
     description: String,
     completed: { type: Boolean, default: false },
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    dueDate: Date,
+    priority: {
+      type: String,
+      enum: ["Low", "Medium", "High", "None"],
+      default: "None",
+    },
   },
   { timestamps: true }
 );

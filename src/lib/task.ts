@@ -1,6 +1,6 @@
 import Task from "@/models/task";
-import {getSession} from "./auth";
-import User from "@/models/user";
+import "server-only";
+import { getSession } from "./auth";
 
 /**
  * Retrieves tasks belonging to the current user.
@@ -13,5 +13,12 @@ export async function getTasks(): Promise<Array<any>> {
     return [];
   }
   const tasks = await Task.find({ user: session.uid });
-  return tasks;
+  return tasks.map((task) => {
+    const taskObject = task.toObject();
+    return {
+      ...taskObject,
+      _id: taskObject._id.toString(),
+      user: taskObject.user.toString(),
+    };
+  });
 }

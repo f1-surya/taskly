@@ -1,8 +1,13 @@
 import { Card } from "@/components/ui/card";
+import { getSession } from "@/lib/auth";
+import { Metadata } from "next";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import LoginForm from "./LoginForm";
-import {getSession} from "@/lib/auth";
-import {redirect} from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Login | Task Manager",
+};
 
 export default async function Login() {
   const session = await getSession();

@@ -3,6 +3,11 @@ import Image from "next/image";
 import SignUpForm from "./form";
 import {getSession} from "@/lib/auth";
 import {redirect} from "next/navigation";
+import {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Sign Up | Task Manager",
+} 
 
 export default async function SignUp() {
   const session = await getSession();
