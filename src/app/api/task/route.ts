@@ -35,9 +35,8 @@ export async function PUT(req: Request): Promise<Response> {
     if (!session) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
+
     const body = await req.json();
-    console.log(body);
-    
     const task = await Task.findByIdAndUpdate(body._id, body, { new: true });
     return Response.json(task, { status: 201 });
   } catch (e) {
