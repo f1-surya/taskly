@@ -56,14 +56,16 @@ export async function createSession(data: { [key: string]: any }) {
 }
 
 /**
- * Authenticates a user by verifying their credentials and creating a session.
+ * Logs in a user with the provided form data. Verifies the credentials and retrieves the user data.
+ * If the credentials are valid, creates a session for the user and redirects to the home page.
  *
+ * @param {LoginState | undefined} state - The current login state.
  * @param {FormData} formData - The form data containing the user's email and password.
- * @return {Promise<WithId<Document> | null>} A promise that resolves to the user data if the login is successful, or null if the login fails.
+ * @return {Promise<LoginState>} The login state indicating the result of the login attempt.
  */
 export async function login(
   state: LoginState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<LoginState> {
   // Verify credentials && get the user
   const user = {
@@ -95,7 +97,7 @@ export async function login(
 
 export async function signUp(
   state: SignUpState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<SignUpState> {
   const oldUser = await User.findOne({
     email: formData.get("email")!.toString(),
@@ -116,7 +118,7 @@ export async function signUp(
   const hashedPassword = scryptSync(
     formData.get("password")!.toString(),
     salt,
-    64
+    64,
   ).toString("hex");
 
   const data = await User.create({
@@ -127,7 +129,7 @@ export async function signUp(
   await createSession({
     email: formData.get("email"),
     name: fullname,
-    uid: data.insertedId,
+    uid: data._id,
   });
   redirect("/");
 }

@@ -14,6 +14,8 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
 
+    console.log(session);
+
     const body = await req.json();
     const task = await Task.create({ ...body, user: session.uid });
     return Response.json(task, { status: 201 });
@@ -61,7 +63,7 @@ export async function DELETE(req: Request) {
     await Task.findByIdAndDelete(_id);
     return Response.json(
       { message: "Task deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.log(error);
