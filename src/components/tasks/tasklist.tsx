@@ -26,11 +26,16 @@ export default function TaskList(): ReactNode {
    * Saves a task when the Enter key is pressed and the task title is not empty.
    *
    * @param {KeyboardEvent<HTMLInputElement>} e - The keyboard event triggered by the user.
-   * @return {Promise<void>} - A promise that resolves when the task is saved successfully.
+   * @return {Promise<string | number | undefined>} - A promise that resolves when the task is saved successfully.
    */
-  async function saveTask(e: KeyboardEvent<HTMLInputElement>): Promise<void> {
+  async function saveTask(
+    e: KeyboardEvent<HTMLInputElement>,
+  ): Promise<string | number | undefined> {
     const title = e.currentTarget.value;
-    if (e.key === "Enter" && title.length > 0) {
+    if (e.key === "Enter") {
+      if (title.length === 0) {
+        return toast.error("Title cannot be empty");
+      }
       const res = await fetch("/api/task", {
         method: "POST",
         headers: {
@@ -78,9 +83,11 @@ export default function TaskList(): ReactNode {
     return (
       <div
         key={task._id}
-        className="radius-6 bg-gray-100 w-full rounded-lg p-2 flex gap-4 shadow-inner items-center cursor-pointer hover:bg-gray-200 transition-colors"
+        id={task._id}
+        className="radius-6 bg-gray-100 w-full rounded-lg p-2 flex gap-4 shadow-inner items-center cursor-pointer hover:bg-gray-200 transition-colors task"
       >
         <Checkbox
+          id={`checkBox-${task._id}`}
           checked={task.completed}
           onCheckedChange={() => changeStatus(task)}
         />
@@ -92,7 +99,7 @@ export default function TaskList(): ReactNode {
   }
 
   return (
-    <div className="flex flex-col gap-4 m-2 w-full sm:w-auto">
+    <div className="flex flex-col gap-4 m-2 w-full sm:w-auto tasks">
       <div className="sm:hidden flex flex-row items-center gap-2 border-b-2 border-gray-300 p-2">
         <Image src="/logo.svg" alt="Logo" width={35} height={35} />
         <p className="font-semibold text-md">Task manager</p>

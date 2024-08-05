@@ -1,6 +1,5 @@
 // @v// @vitest-environment node
 
-import { scryptSync } from "crypto";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createSession, decrypt, encrypt, login, logout, signUp } from "./auth";
 import { jwtVerify } from "jose";
@@ -50,7 +49,11 @@ describe("Auth Functions", () => {
   //
   describe("createSession", () => {
     it("should create a session cookie", async () => {
-      const data = { email: "newuser@example.com", uid: "123", name: "Test User" };
+      const data = {
+        email: "newuser@example.com",
+        uid: "123",
+        name: "Test User",
+      };
       await createSession(data);
       expect(cookies).toHaveBeenCalled();
     });
@@ -93,7 +96,7 @@ describe("Auth Functions", () => {
       formData.append("confirmPassword", "password123");
       formData.append("fullname", "New User");
 
-      const result = await signUp(undefined, formData);
+      await signUp(undefined, formData);
       expect(redirect).toHaveBeenCalled();
     });
 
