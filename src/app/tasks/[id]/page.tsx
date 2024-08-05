@@ -81,7 +81,7 @@ export default function Task({ params }: { params: { id: string } }) {
       />
       <AlertDialog>
         <AlertDialogTrigger className="self-end mt-auto">
-          <Trash color="red" />
+          <Trash color="red" id="deleteTask" />
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogTitle>

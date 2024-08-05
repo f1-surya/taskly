@@ -6,10 +6,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import useMediaQuery from "@/hooks/use-media-query";
 import { ITask } from "@/interfaces/task";
 import { useParams } from "next/navigation";
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 
 export const TaskContext = createContext<{
   tasks: ITask[];
@@ -31,8 +30,12 @@ export default function TaskProvider({
   tasks: ITask[];
 }) {
   const [tasksState, setTasksState] = useState<ITask[]>(tasks);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [isDesktop, setIsDesktop] = useState(false);
   const { id } = useParams();
+
+  useEffect(() => {
+    setIsDesktop(window.matchMedia("(min-width: 768px)").matches);
+  }, []);
 
   function updateTask(taskId: string, updatedTask: { [key: string]: any }) {
     const updatedTasks = tasksState.map((task) =>
