@@ -2,10 +2,10 @@
 
 import User from "@/models/user";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import dayjs from "dayjs";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { addDays } from "date-fns";
 
 const secretKey = process.env.SECRET_KEY ?? "Very_secret_key";
 const key = new TextEncoder().encode(secretKey);
@@ -20,7 +20,7 @@ export async function encrypt(payload: any): Promise<string> {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(dayjs().add(1, "day").toDate())
+    .setExpirationTime(addDays(new Date(), 1))
     .sign(key);
 }
 

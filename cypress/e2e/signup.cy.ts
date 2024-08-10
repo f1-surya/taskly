@@ -8,6 +8,7 @@ describe("signup", () => {
     cy.get("input[name=password]").type("password123");
     cy.get("input[name=confirmPassword]").type("password123");
     cy.get("button[type=submit]").click();
+    cy.wait(200);
     cy.getCookie("session").should("exist");
     cy.url().should("include", "/tasks");
     const title = faker.lorem.sentence();

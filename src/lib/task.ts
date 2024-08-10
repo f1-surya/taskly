@@ -1,6 +1,7 @@
 import Task from "@/models/task";
 import "server-only";
 import { getSession } from "./auth";
+import { cookies } from "next/headers";
 
 /**
  * Retrieves tasks belonging to the current user.
@@ -12,7 +13,21 @@ export async function getTasks(): Promise<Array<any>> {
   if (!session) {
     return [];
   }
-  const tasks = await Task.find({ user: session.uid });
+
+  const sort = cookies().get("sort")?.value;
+  let tasks: any[];
+  if (sort === "Date") {
+    tasks = await Task.find({ user: session.uid })
+      .sort({ createdAt: -1 })
+      .exec();
+  } else if (sort === "Title") {
+    tasks = await Task.find({ user: session.uid })
+      .sort({ title: 1 })
+      .exec();
+  } else {
+    tasks = await Task.find({ user: session.uid });
+  }
+
   return tasks.map((task) => {
     const taskObject = task.toObject();
     return {

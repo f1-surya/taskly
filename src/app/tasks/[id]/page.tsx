@@ -1,10 +1,5 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
-import { Trash, X } from "lucide-react";
-import Link from "next/link";
-import { useContext, useEffect, useRef } from "react";
-import { TaskContext } from "../task-provider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +10,39 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { addDays, format, intlFormatDistance } from "date-fns";
+import { CalendarIcon, Flag, Trash, X } from "lucide-react";
+import Link from "next/link";
+import { useContext, useEffect, useRef } from "react";
+import { TaskContext } from "../task-provider";
+import Image from "next/image";
+
+const colors: { [key: string]: string } = {
+  Low: "#4287f5",
+  Medium: "#dbd402",
+  High: "#fc0000",
+  None: "#999999",
+};
 
 export default function Task({ params }: { params: { id: string } }) {
   const saved = useRef(false);
@@ -23,7 +51,7 @@ export default function Task({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const timeOut = setTimeout(() => {
-      if (!saved.current && task.title.length > 0) {
+      if (task && !saved.current && task.title.length > 0) {
         fetch("/api/task", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -52,16 +80,84 @@ export default function Task({ params }: { params: { id: string } }) {
     });
   }
 
+  if (!task) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <Image src="/404.svg" width={200} height={200} alt="404" />
+        Task not found
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-screen border-l-2 border-gray-200 flex flex-col gap-4 p-4">
-      <div className="flex gap-2 items-center">
-        <Link href="/tasks">
-          <X />
-        </Link>
-        <Checkbox
-          checked={task.completed}
-          onCheckedChange={() => onChange("completed", !task.completed)}
-        />
+      <div className="flex gap-2 items-center justify-between">
+        <div className="flex flex-row items-center gap-2">
+          <Link href="/tasks">
+            <X />
+          </Link>
+          <Checkbox
+            checked={task.completed}
+            onCheckedChange={() => onChange("completed", !task.completed)}
+          />
+          <div className="h-3 w-px bg-gray-400" />
+          <Popover>
+            <PopoverTrigger className="flex gap-2 items-center">
+              <CalendarIcon size={16} color={task.dueDate ? "black" : "gray"} />
+              {task.dueDate && (
+                <p
+                  className="text-sm"
+                  style={{ color: colors[task.priority!] }}
+                >
+                  {intlFormatDistance(task.dueDate, new Date())}
+                  {", "}
+                  {format(task.dueDate, "dd MMM yyyy")}
+                </p>
+              )}
+              {!task.dueDate && <p className="text-gray-700">Due date</p>}
+            </PopoverTrigger>
+            <PopoverContent>
+              <Calendar
+                mode="single"
+                selected={task.dueDate}
+                fromDate={addDays(new Date(), 1)}
+                onSelect={(d) => onChange("dueDate", d)}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Flag
+                    size={20}
+                    strokeWidth={task.priority === "None" ? 2 : 1}
+                    fill={colors[task.priority!]}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Priority</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuRadioGroup
+              value={task.priority}
+              onValueChange={(val) => onChange("priority", val)}
+            >
+              {Object.keys(colors).map((val, i) => (
+                <DropdownMenuRadioItem value={val} key={i}>
+                  <div className="flex flex-row justify-between items-center w-full">
+                    {val} <Flag fill={colors[val]} strokeWidth={1} size={15} />
+                  </div>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <input
         type="text"

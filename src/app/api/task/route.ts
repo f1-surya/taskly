@@ -14,8 +14,6 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
 
-    console.log(session);
-
     const body = await req.json();
     const task = await Task.create({ ...body, user: session.uid });
     return Response.json(task, { status: 201 });
@@ -53,7 +51,7 @@ export async function PUT(req: Request): Promise<Response> {
  * @param {Request} req - The request object.
  * @return {Promise<Response>} The response object.
  */
-export async function DELETE(req: Request) {
+export async function DELETE(req: Request): Promise<Response> {
   try {
     const { _id } = await req.json();
     const session = await getSession();

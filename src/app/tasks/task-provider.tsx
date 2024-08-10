@@ -15,11 +15,13 @@ export const TaskContext = createContext<{
   updateTask: (taskId: string, updatedTask: { [key: string]: any }) => void;
   addTask: (task: ITask) => void;
   deleteTask: (task: ITask) => void;
+  sortTasks: (tasks: ITask[]) => void;
 }>({
   deleteTask: () => {},
   tasks: [],
   updateTask: () => {},
   addTask: () => {},
+  sortTasks: () => {},
 });
 
 export default function TaskProvider({
@@ -51,10 +53,13 @@ export default function TaskProvider({
   function deleteTask(task: ITask) {
     setTasksState(tasksState.filter((e) => e._id !== task._id));
   }
+  function sortTasks(tasks: ITask[]) {
+    setTasksState(tasks);
+  }
 
   return (
     <TaskContext.Provider
-      value={{ tasks: tasksState, updateTask, addTask, deleteTask }}
+      value={{ tasks: tasksState, updateTask, addTask, deleteTask, sortTasks }}
     >
       {isDesktop ? (
         <ResizablePanelGroup direction="horizontal">

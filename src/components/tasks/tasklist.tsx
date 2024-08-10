@@ -2,13 +2,33 @@
 
 import { TaskContext } from "@/app/tasks/task-provider";
 import { ITask } from "@/interfaces/task";
+import { getCookie, setCookie } from "cookies-next";
+import { ArrowDownUp } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyboardEvent, ReactNode, useContext } from "react";
+import {
+  KeyboardEvent,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { Checkbox } from "../ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Input } from "../ui/input";
-import Image from "next/image";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { differenceInDays } from "date-fns";
+
+const groups = ["None", "Priority", "Due date"];
+const sorts = ["None", "Date", "Title"];
 
 /**
  * Renders a list of tasks.
@@ -16,8 +36,62 @@ import Image from "next/image";
  * @return {ReactNode} The rendered list of tasks.
  */
 export default function TaskList(): ReactNode {
-  const { tasks, updateTask, addTask } = useContext(TaskContext);
+  const [groupBy, setGroupBy] = useState(getCookie("group") || groups[0]);
+  const [sort, setSort] = useState(getCookie("sort") || sorts[0]);
+  const [taskGroups, setTaskGroups] = useState<{ [key: string]: ITask[] }>({});
+  const { tasks, updateTask, addTask, sortTasks } = useContext(TaskContext);
   const router = useRouter();
+
+  useEffect(() => {
+    setCookie("group", groupBy, { sameSite: "strict" });
+    setCookie("sort", sort, { sameSite: "strict" });
+    setTaskGroups({});
+    if (groupBy !== "None") {
+      const groups = tasks.reduce(
+        (acc, task) => {
+          if (task.completed) return acc;
+          if (groupBy === "Due date") {
+            let dueDateKey = "None";
+            if (task.dueDate) {
+              const diff = differenceInDays(task.dueDate, new Date());
+              if (diff < 0) {
+                dueDateKey = "Overdue";
+              } else if (diff < 1) {
+                dueDateKey = "Today";
+              } else if (diff > 2) {
+                dueDateKey = "Later";
+              }
+            }
+            return {
+              ...acc,
+              [dueDateKey]: [...(acc[dueDateKey] || []), task].sort(
+                sortTasksLocal,
+              ),
+            };
+          }
+          return {
+            ...acc,
+            [task.priority]: [...(acc[task.priority] || []), task].sort(
+              sortTasksLocal,
+            ),
+          };
+        },
+        {} as { [key: string]: ITask[] },
+      );
+      setTaskGroups(groups);
+    } else if (sort !== "None") {
+      sortTasks(tasks.sort(sortTasksLocal));
+    }
+  }, [groupBy, sort, tasks]);
+
+  function sortTasksLocal(a: ITask, b: ITask) {
+    if (sort === "Date") {
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    } else if (sort === "Title") {
+      return a.title.localeCompare(b.title);
+    }
+    return 0;
+  }
 
   const pendingTasks = tasks.filter((task) => !task.completed);
   const completedTasks = tasks.filter((task) => task.completed);
@@ -62,21 +136,24 @@ export default function TaskList(): ReactNode {
    * @return {Promise<void>} A promise that resolves when the task's status is changed.
    */
   async function changeStatus(task: ITask): Promise<void> {
-    const res = await fetch("/api/task", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...task,
-        completed: !task.completed,
+    toast.promise(
+      fetch("/api/task", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...task,
+          completed: !task.completed,
+        }),
+      }).then((res) => {
+        if (res.status === 201) {
+          updateTask(task._id!, { completed: !task.completed });
+        } else {
+          toast.error("Something went wrong");
+        }
       }),
-    });
-    if (res.status === 201) {
-      updateTask(task._id!, { completed: !task.completed });
-    } else {
-      toast.error("Something went wrong");
-    }
+    );
   }
 
   function renderTask(task: ITask) {
@@ -84,7 +161,7 @@ export default function TaskList(): ReactNode {
       <div
         key={task._id}
         id={task._id}
-        className="radius-6 bg-gray-100 w-full rounded-lg p-2 flex gap-4 shadow-inner items-center cursor-pointer hover:bg-gray-200 transition-colors task"
+        className={`radius-6 bg-gray-100 w-full rounded-lg p-2 flex gap-4 shadow-inner items-center cursor-pointer hover:bg-gray-200 transition-colors task ${task.completed ? "opacity-50" : "opacity-100"}`}
       >
         <Checkbox
           id={`checkBox-${task._id}`}
@@ -98,11 +175,62 @@ export default function TaskList(): ReactNode {
     );
   }
 
+  function renderGroup(group: string, tasks: ITask[]) {
+    return (
+      <div className="flex flex-col gap-2" key={group}>
+        <p className="font-semibold text-md my-1">{group}</p>
+        {tasks.map(renderTask)}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 m-2 w-full sm:w-auto tasks">
-      <div className="sm:hidden flex flex-row items-center gap-2 border-b-2 border-gray-300 p-2">
-        <Image src="/logo.svg" alt="Logo" width={35} height={35} />
-        <p className="font-semibold text-md">Task manager</p>
+      <div className="flex flex-row items-center justify-between border-b-2 border-gray-300 p-2">
+        <div className="flex flex-row items-center gap-2">
+          <Image src="/logo.svg" alt="Logo" width={35} height={35} />
+          <p className="font-semibold text-md">Task manager</p>
+        </div>
+        <Popover>
+          <PopoverTrigger>
+            <ArrowDownUp size={16} />
+          </PopoverTrigger>
+          <PopoverContent className="flex gap-2 flex-col max-w-40">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex flex-row items-center justify-between w-full text-sm">
+                Group by
+                <span className="text-xs text-gray-600">{groupBy}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup
+                  value={groupBy}
+                  onValueChange={setGroupBy}
+                >
+                  {groups.map((group, i) => (
+                    <DropdownMenuRadioItem value={group} key={i}>
+                      {group}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex flex-row items-center justify-between w-full text-sm">
+                Sort
+                <span className="text-xs text-gray-600">{sort}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
+                  {sorts.map((sort, i) => (
+                    <DropdownMenuRadioItem value={sort} key={i}>
+                      {sort}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </PopoverContent>
+        </Popover>
       </div>
       <Input
         placeholder="+ Add a task"
@@ -110,15 +238,24 @@ export default function TaskList(): ReactNode {
         id="taskTitle"
         onKeyDown={saveTask}
       />
-      {pendingTasks.map(renderTask)}
-      {completedTasks.length > 0 && (
-        <>
-          <div className="flex justify-between mt-2">
-            <p className="font-semibold text-md">Completed tasks</p>
-          </div>
-          {completedTasks.map(renderTask)}
-        </>
-      )}
+      <div className="flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-4rem)]">
+        {groupBy === "None" && pendingTasks.map(renderTask)}
+
+        {groupBy === "Due date" &&
+          Object.keys(taskGroups).map((group) =>
+            renderGroup(group, taskGroups[group]),
+          )}
+
+        {taskGroups.High && renderGroup("High", taskGroups.High)}
+        {taskGroups.Medium && renderGroup("Medium", taskGroups.Medium)}
+        {taskGroups.Low && renderGroup("Low", taskGroups.Low)}
+        {groupBy !== "Due date" &&
+          taskGroups.None &&
+          renderGroup("None", taskGroups.None)}
+
+        {completedTasks.length > 0 &&
+          renderGroup("Completed tasks", completedTasks)}
+      </div>
     </div>
   );
 }
