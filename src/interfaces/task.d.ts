@@ -6,7 +6,7 @@ export interface ITask {
   completed: boolean;
   _id?: string;
   dueDate?: Date;
-  priority?: string;
+  priority: string;
   user?: Schema.Types.ObjectId;
   createdAt: Date;
 }
