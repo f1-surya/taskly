@@ -58,7 +58,7 @@ export default function TaskList(): ReactNode {
                 dueDateKey = "Overdue";
               } else if (diff < 1) {
                 dueDateKey = "Today";
-              } else if (diff > 2) {
+              } else {
                 dueDateKey = "Later";
               }
             }
