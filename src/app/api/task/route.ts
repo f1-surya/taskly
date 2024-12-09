@@ -40,7 +40,6 @@ export async function PUT(req: Request): Promise<Response> {
 
     const body = await req.json();
     const cleanBody = Object.fromEntries(Object.entries(body).filter(([_, v]) => v != null));
-    delete cleanBody.dueDate
     delete cleanBody.createdAt
     delete cleanBody.updatedAt
     delete cleanBody.id
