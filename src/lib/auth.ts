@@ -1,11 +1,11 @@
 "use server";
 
-import User from "@/models/user";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { jwtVerify, SignJWT } from "jose";
+import { JWTPayload, jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { addDays } from "date-fns";
+import prisma from "./db";
 
 const secretKey = process.env.SECRET_KEY ?? "Very_secret_key";
 const key = new TextEncoder().encode(secretKey);
@@ -16,7 +16,7 @@ const key = new TextEncoder().encode(secretKey);
  * @param {any} payload - The payload to be encrypted.
  * @return {Promise<string>} The encrypted payload.
  */
-export async function encrypt(payload: any): Promise<string> {
+export async function encrypt(payload: SessionPayload): Promise<string> {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -30,10 +30,11 @@ export async function encrypt(payload: any): Promise<string> {
  * @param {string} input - The encrypted input to be decrypted.
  * @return {Promise<any>} The decrypted payload.
  */
-export async function decrypt(input: string): Promise<any> {
+export async function decrypt(input: string): Promise<SessionPayload> {
   const { payload } = await jwtVerify(input, key, {
     algorithms: ["HS256"],
   });
+  // @ts-ignore
   return payload;
 }
 
@@ -42,14 +43,14 @@ export async function decrypt(input: string): Promise<any> {
  *
  * @param {Object} data - The data to create the session with.
  */
-export async function createSession(data: { [key: string]: any }) {
+export async function createSession(data: SessionPayload) {
   const session = await encrypt(data);
 
   const date = new Date();
   date.setDate(date.getDate() + 1);
 
-  // Save the session in a cookie
-  cookies().set("session", session, {
+  const cookieJar = await cookies();
+  cookieJar.set("session", session, {
     httpOnly: true,
     expires: date,
   });
@@ -73,7 +74,11 @@ export async function login(
     password: formData.get("password")!.toString(),
   };
 
-  const userData = await User.findOne({ email: user.email });
+  const userData = await prisma.users.findUnique({
+    where: {
+      email: user.email,
+    },
+  });
   if (!userData) {
     return { email: true };
   }
@@ -87,7 +92,7 @@ export async function login(
   if (match) {
     await createSession({
       email: user.email,
-      uid: userData._id,
+      uid: userData.id,
       name: userData.name,
     });
     redirect("/");
@@ -99,8 +104,10 @@ export async function signUp(
   state: SignUpState | undefined,
   formData: FormData,
 ): Promise<SignUpState> {
-  const oldUser = await User.findOne({
-    email: formData.get("email")!.toString(),
+  const oldUser = await prisma.users.findUnique({
+    where: {
+      email: formData.get('email')!.toString()
+    }
   });
   const fullname = formData.get("fullname")!.toString().trim();
 
@@ -121,21 +128,24 @@ export async function signUp(
     64,
   ).toString("hex");
 
-  const data = await User.create({
-    email: formData.get("email"),
-    name: fullname,
-    password: `${hashedPassword}:${salt}`,
+  const data = await prisma.users.create({
+    data: {
+      email: formData.get("email")!.toString(),
+      name: fullname,
+      password: `${hashedPassword}:${salt}`,
+    },
   });
   await createSession({
-    email: formData.get("email"),
+    email: formData.get("email")!.toString(),
     name: fullname,
-    uid: data._id,
+    uid: data.id,
   });
   redirect("/");
 }
 
 export async function logout() {
-  cookies().delete("session");
+  const cookieJar = await cookies();
+  cookieJar.delete("session");
 }
 
 /**
@@ -143,8 +153,9 @@ export async function logout() {
  *
  * @return {Promise<string | null>} The decrypted session value or null if session is not found.
  */
-export async function getSession(): Promise<{ [key: string]: any } | null> {
-  const session = cookies().get("session")?.value;
+export async function getSession(): Promise<SessionPayload | null> {
+  const cookieJar = await cookies();
+  const session = cookieJar.get("session")?.value;
   if (!session) {
     return null;
   }
@@ -160,4 +171,10 @@ interface SignUpState {
   email?: boolean;
   match?: boolean;
   name?: boolean;
+}
+
+export interface SessionPayload extends JWTPayload {
+  email: string;
+  name: string;
+  uid: string;
 }

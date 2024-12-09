@@ -120,7 +120,7 @@ export default function TaskList(): ReactNode {
       if (res.status === 201) {
         const task = await res.json();
         addTask(task);
-        router.push(`/tasks/${task._id}`);
+        router.push(`/tasks/${task.id}`);
         const inp = document.getElementById("taskTitle") as HTMLInputElement;
         inp.value = "";
       } else {
@@ -148,7 +148,7 @@ export default function TaskList(): ReactNode {
         }),
       }).then((res) => {
         if (res.status === 201) {
-          updateTask(task._id!, { completed: !task.completed });
+          updateTask(task.id!, { completed: !task.completed });
         } else {
           toast.error("Something went wrong");
         }
@@ -159,16 +159,16 @@ export default function TaskList(): ReactNode {
   function renderTask(task: ITask) {
     return (
       <div
-        key={task._id}
-        id={task._id}
+        key={task.id}
+        id={task.id}
         className={`radius-6 bg-gray-100 w-full rounded-lg p-2 flex gap-4 shadow-inner items-center cursor-pointer hover:bg-gray-200 transition-colors task ${task.completed ? "opacity-50" : "opacity-100"}`}
       >
         <Checkbox
-          id={`checkBox-${task._id}`}
+          id={`checkBox-${task.id}`}
           checked={task.completed}
           onCheckedChange={() => changeStatus(task)}
         />
-        <Link href={`/tasks/${task._id}`} className="w-full">
+        <Link href={`/tasks/${task.id}`} className="w-full">
           <p className="text-md font-semibold">{task.title}</p>
         </Link>
       </div>

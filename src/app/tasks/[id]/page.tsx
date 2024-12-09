@@ -32,10 +32,11 @@ import {
 } from "@/components/ui/tooltip";
 import { addDays, format, intlFormatDistance } from "date-fns";
 import { CalendarIcon, Flag, Trash, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useContext, useEffect, useRef } from "react";
 import { TaskContext } from "../task-provider";
-import Image from "next/image";
 
 const colors: { [key: string]: string } = {
   Low: "#4287f5",
@@ -44,10 +45,11 @@ const colors: { [key: string]: string } = {
   None: "#999999",
 };
 
-export default function Task({ params }: { params: { id: string } }) {
+export default function Task() {
   const saved = useRef(false);
   const { tasks, updateTask, deleteTask } = useContext(TaskContext);
-  const task = tasks.find((task) => task._id === params.id)!;
+  const params = useParams<{ id: string }>();
+  const task = tasks.find((task) => task.id === params.id)!;
 
   useEffect(() => {
     const timeOut = setTimeout(() => {
@@ -116,7 +118,7 @@ export default function Task({ params }: { params: { id: string } }) {
               )}
               {!task.dueDate && <p className="text-gray-700">Due date</p>}
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
                 selected={task.dueDate}
@@ -172,7 +174,7 @@ export default function Task({ params }: { params: { id: string } }) {
         id="description"
         className="h-96 placeholder:text-slate-600 focus:outline-none"
         placeholder="Enter your description here"
-        value={task.description}
+        value={task.description ?? ""}
         onChange={(e) => onChange("description", e.target.value)}
       />
       <AlertDialog>

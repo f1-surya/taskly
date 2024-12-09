@@ -9,7 +9,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
   if (!session) {
     redirect("/login");
   }
-  const tasks = await getTasks();
+  const tasks = await getTasks(session);
   return (
     <main className="flex min-h-screen flex-row w-full">
       <TaskProvider tasks={tasks}>{children}</TaskProvider>

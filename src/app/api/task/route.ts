@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import Task from "@/models/task";
+import prisma from "@/lib/db";
 
 /**
  * Handles the POST request for creating a new task.
@@ -15,10 +15,12 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const task = await Task.create({ ...body, user: session.uid });
+    const task = await prisma.tasks.create({
+      data: { ...body, userId: session.uid },
+    });
     return Response.json(task, { status: 201 });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return Response.json({ message: "Something went wrong" }, { status: 500 });
   }
 }
@@ -33,11 +35,20 @@ export async function PUT(req: Request): Promise<Response> {
   try {
     const session = await getSession();
     if (!session) {
-      return Response.json({ message: "User not found" }, { status: 404 });
+      return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    const task = await Task.findByIdAndUpdate(body._id, body, { new: true });
+    const cleanBody = Object.fromEntries(Object.entries(body).filter(([_, v]) => v != null));
+    delete cleanBody.dueDate
+    delete cleanBody.createdAt
+    delete cleanBody.updatedAt
+    delete cleanBody.id
+    delete cleanBody.userId
+    const task = await prisma.tasks.update({
+      where: { id: body.id },
+      data: cleanBody,
+    });
     return Response.json(task, { status: 201 });
   } catch (e) {
     console.error(e);
@@ -53,12 +64,12 @@ export async function PUT(req: Request): Promise<Response> {
  */
 export async function DELETE(req: Request): Promise<Response> {
   try {
-    const { _id } = await req.json();
+    const { id } = await req.json();
     const session = await getSession();
     if (!session) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
-    await Task.findByIdAndDelete(_id);
+    await prisma.tasks.delete({ where: { id } });
     return Response.json(
       { message: "Task deleted successfully" },
       { status: 200 },

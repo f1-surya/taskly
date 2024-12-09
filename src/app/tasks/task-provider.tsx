@@ -41,7 +41,7 @@ export default function TaskProvider({
 
   function updateTask(taskId: string, updatedTask: { [key: string]: any }) {
     const updatedTasks = tasksState.map((task) =>
-      task._id === taskId ? { ...task, ...updatedTask } : task,
+      task.id === taskId ? { ...task, ...updatedTask } : task,
     );
     setTasksState(updatedTasks);
   }
@@ -51,7 +51,7 @@ export default function TaskProvider({
   }
 
   function deleteTask(task: ITask) {
-    setTasksState(tasksState.filter((e) => e._id !== task._id));
+    setTasksState(tasksState.filter((e) => e.id !== task.id));
   }
   function sortTasks(tasks: ITask[]) {
     setTasksState(tasks);

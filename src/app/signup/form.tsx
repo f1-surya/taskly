@@ -3,10 +3,11 @@
 import { Button } from "@/components/ui/button";
 import CustomField from "@/components/ui/customfield";
 import { signUp } from "@/lib/auth";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 export default function SignUpForm() {
-  const [state, action] = useFormState(signUp, undefined);
+  const [state, action] = useActionState(signUp, undefined);
 
   return (
     <form className="flex flex-col items-center gap-2" action={action}>
