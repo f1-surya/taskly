@@ -1,5 +1,4 @@
 import { getSession } from "@/lib/auth";
-import prisma from "@/lib/db";
 
 /**
  * Handles the POST request for creating a new task.
@@ -15,10 +14,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const task = await prisma.tasks.create({
-      data: { ...body, userId: session.uid },
-    });
-    return Response.json(task, { status: 201 });
+    return Response.json({}, { status: 201 });
   } catch (error) {
     console.error(error);
     return Response.json({ message: "Something went wrong" }, { status: 500 });
@@ -39,15 +35,14 @@ export async function PUT(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const cleanBody = Object.fromEntries(Object.entries(body).filter(([_, v]) => v != null));
-    delete cleanBody.createdAt
-    delete cleanBody.updatedAt
-    delete cleanBody.id
-    delete cleanBody.userId
-    const task = await prisma.tasks.update({
-      where: { id: body.id },
-      data: cleanBody,
-    });
+    const cleanBody = Object.fromEntries(
+      Object.entries(body).filter(([_, v]) => v != null),
+    );
+    delete cleanBody.createdAt;
+    delete cleanBody.updatedAt;
+    delete cleanBody.id;
+    delete cleanBody.userId;
+    const task = {};
     return Response.json(task, { status: 201 });
   } catch (e) {
     console.error(e);
@@ -68,7 +63,6 @@ export async function DELETE(req: Request): Promise<Response> {
     if (!session) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
-    await prisma.tasks.delete({ where: { id } });
     return Response.json(
       { message: "Task deleted successfully" },
       { status: 200 },

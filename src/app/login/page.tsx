@@ -1,18 +1,19 @@
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getSession } from "@/lib/auth";
+import CustomField from "@/components/ui/customfield";
+import { auth, signIn } from "auth";
 import { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = {
   title: "Login | Task Manager",
 };
 
 export default async function Login() {
-  const session = await getSession();
-  if (session) {
-    redirect("/");
+  const session = await auth();
+  if (session?.user) {
+    redirect("/tasks");
   }
 
   return (
@@ -32,7 +33,27 @@ export default async function Login() {
           height={50}
           className="mx-auto"
         />
-        <LoginForm />
+        {process.env.NODE_ENV === "development" && (
+          <form
+            className="flex flex-col items-center gap-2"
+            action={async (formData) => {
+              "use server";
+              await signIn("credentials", formData);
+            }}
+          >
+            <h1 className="text-3xl font-semibold">Login</h1>
+            <CustomField name="password" title="Password" type="password" />
+            <Button type="submit">Login</Button>
+          </form>
+        )}
+        <form
+          action={async () => {
+            "use server";
+            await signIn("github");
+          }}
+        >
+          <Button>Login with GitHub</Button>
+        </form>
       </Card>
     </main>
   );
