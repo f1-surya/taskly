@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,8 +19,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <footer className="w-full border-t py-6">
+            <p className="text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Taskly. All rights reserved.
+            </p>
+          </footer>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

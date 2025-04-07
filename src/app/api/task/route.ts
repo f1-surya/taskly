@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { auth } from "auth";
 
 /**
  * Handles the POST request for creating a new task.
@@ -8,7 +8,7 @@ import { getSession } from "@/lib/auth";
  */
 export async function POST(req: Request): Promise<Response> {
   try {
-    const session = await getSession();
+    const session = await auth();
     if (!session) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
@@ -29,7 +29,7 @@ export async function POST(req: Request): Promise<Response> {
  */
 export async function PUT(req: Request): Promise<Response> {
   try {
-    const session = await getSession();
+    const session = await auth();
     if (!session) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -59,7 +59,7 @@ export async function PUT(req: Request): Promise<Response> {
 export async function DELETE(req: Request): Promise<Response> {
   try {
     const { id } = await req.json();
-    const session = await getSession();
+    const session = await auth();
     if (!session) {
       return Response.json({ message: "User not found" }, { status: 404 });
     }
