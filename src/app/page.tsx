@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/theme-toggle";
 export default async function Home() {
   const session = await auth();
   if (session) {
-    // redirect("/tasks");
+    redirect("/tasks");
   }
 
   return (

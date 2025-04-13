@@ -1,5 +1,5 @@
+import { Board } from "@/components/kanban-board";
 import { auth } from "auth";
-import { LassoSelect } from "lucide-react";
 import { redirect } from "next/navigation";
 
 export default async function Tasks() {
@@ -9,9 +9,8 @@ export default async function Tasks() {
   }
 
   return (
-    <div className="hidden sm:flex self-center w-full h-screen items-center justify-center flex-col gap-4">
-      <LassoSelect width={200} height={200} />
-      <p>Click a task title to view its details</p>
+    <div className="w-full h-screen p-4">
+      <Board />
     </div>
   );
 }
