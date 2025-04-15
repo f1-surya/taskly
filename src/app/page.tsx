@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/theme-toggle";
 export default async function Home() {
   const session = await auth();
   if (session) {
-    redirect("/tasks");
+    redirect("/boards");
   }
 
   return (
@@ -18,11 +18,11 @@ export default async function Home() {
         <div className="container flex h-16 items-center justify-between">
           <span className="font-bold text-xl">Taskly</span>
           <div className="flex items-center gap-4">
-            <Link href="/tasks" className="text-sm font-medium">
+            <Link href="/boards" className="text-sm font-medium">
               Dashboard
             </Link>
             <ThemeToggle />
-            <Link href="/tasks">
+            <Link href="/boards">
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -42,7 +42,7 @@ export default async function Home() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/tasks">
+                <Link href="/boards">
                   <Button size="lg" className="gap-1.5">
                     Try it now
                     <ArrowRight className="h-4 w-4" />
@@ -129,7 +129,7 @@ export default async function Home() {
             </p>
           </div>
           <div className="mx-auto w-full max-w-sm space-y-2">
-            <Link href="/tasks">
+            <Link href="/boards">
               <Button size="lg" className="w-full">
                 Get Started for Free
               </Button>
