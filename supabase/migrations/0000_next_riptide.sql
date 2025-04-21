@@ -24,10 +24,19 @@ CREATE TABLE "authenticator" (
 	CONSTRAINT "authenticator_credentialId_unique" UNIQUE("credentialId")
 );
 --> statement-breakpoint
+CREATE TABLE "boards" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "boards_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" varchar NOT NULL,
+	"isPinned" boolean DEFAULT false NOT NULL,
+	"owner" text NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "columns" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "columns_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"name" varchar NOT NULL,
-	"owner" text NOT NULL,
+	"board" integer NOT NULL,
 	"index" integer NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp NOT NULL
@@ -40,7 +49,7 @@ CREATE TABLE "session" (
 );
 --> statement-breakpoint
 CREATE TABLE "tasks" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "tasks_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"id" text PRIMARY KEY NOT NULL,
 	"title" varchar NOT NULL,
 	"column" integer NOT NULL,
 	"index" integer NOT NULL,
@@ -65,9 +74,11 @@ CREATE TABLE "verificationToken" (
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "authenticator" ADD CONSTRAINT "authenticator_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "columns" ADD CONSTRAINT "columns_owner_user_id_fk" FOREIGN KEY ("owner") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "boards" ADD CONSTRAINT "boards_owner_user_id_fk" FOREIGN KEY ("owner") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "columns" ADD CONSTRAINT "columns_board_boards_id_fk" FOREIGN KEY ("board") REFERENCES "public"."boards"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_column_columns_id_fk" FOREIGN KEY ("column") REFERENCES "public"."columns"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "owner" ON "columns" USING btree ("owner");--> statement-breakpoint
+CREATE INDEX "id_idx" ON "boards" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "parent_idx" ON "columns" USING btree ("board");--> statement-breakpoint
 CREATE INDEX "columnIndex" ON "tasks" USING btree ("column");--> statement-breakpoint
 CREATE INDEX "emailIndex" ON "user" USING btree ("email");

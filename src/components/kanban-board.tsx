@@ -10,96 +10,58 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { Check, GripVertical, Plus, PlusCircle, X } from "lucide-react";
 import { useState } from "react";
-import { Card, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Task, Board, ColumnWithTasks } from "@/types/db";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
-interface Column {
-  id: string;
-  name: string;
-  tasks: Task[];
+interface BoardProps {
+  currBoard: Board;
+  columns: ColumnWithTasks[];
 }
 
-interface Task {
-  id: string;
-  name: string;
-}
-
-const columns: Column[] = [
-  {
-    name: "Todo",
-    id: "kfldloldmv-90dklsco",
-    tasks: [
-      {
-        id: "task-skalxclkMKZaosa",
-        name: "Design UI mockup",
-      },
-      {
-        id: "task-skalxclkMKZaoss",
-        name: "Create project wireframes",
-      },
-      {
-        id: "task-skalxclkMKZaora",
-        name: "Research user requirements",
-      },
-      {
-        id: "task-new-1",
-        name: "Set up project repository",
-      },
-      {
-        id: "task-new-2",
-        name: "Define project scope",
-      },
-    ],
-  },
-  {
-    name: "In progress",
-    id: "kfldloldmv-90dkllelmd",
-    tasks: [
-      {
-        id: "task-progress-1",
-        name: "Implement user authentication",
-      },
-      {
-        id: "task-progress-2",
-        name: "Develop backend API endpoints",
-      },
-      {
-        id: "task-progress-3",
-        name: "Create responsive design",
-      },
-    ],
-  },
-  {
-    name: "Complete",
-    id: "kfldloldmv-90dklscoldlele",
-    tasks: [
-      {
-        id: "task-complete-1",
-        name: "Initial project setup",
-      },
-      {
-        id: "task-complete-2",
-        name: "Project kickoff meeting",
-      },
-      {
-        id: "task-complete-3",
-        name: "Environment configuration",
-      },
-    ],
-  },
-];
-
-export function Board() {
+export function KanbanBoard({ currBoard, columns }: BoardProps) {
   const [cols, setCols] = useState(columns);
-  const [activeCol, setActiveCol] = useState<Column | null>(null);
+  const [activeCol, setActiveCol] = useState<ColumnWithTasks | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const saveTask = async (title: string, column: number) => {
+    const col = cols.find((col) => col.id === column);
+    if (!col) return;
+
+    const newTask = await fetch("/api/task", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title, column, index: col.tasks.length }),
+    });
+    if (newTask.ok) {
+      const newTaskData = await newTask.json();
+      setCols((prev) => {
+        return prev.map((col) => {
+          if (col.id === column) {
+            return {
+              ...col,
+              tasks: [...col.tasks, newTaskData],
+            };
+          }
+          return col;
+        });
+      });
+    } else {
+      toast.error("Failed to create task");
+    }
+  };
 
   const onDragStart = (e: DragStartEvent) => {
     const { active } = e;
 
     const activeId = active.id.toString();
-    const colIndex = cols.findIndex((col) => col.id === activeId);
+    const colIndex = cols.findIndex((col) => col.id.toString() === activeId);
     if (colIndex !== -1) {
       setActiveCol(cols[colIndex]);
     } else {
@@ -128,7 +90,7 @@ export function Board() {
     );
     if (activeColIndex === -1) return;
 
-    const overColIndex = cols.findIndex((col) => col.id === overId);
+    const overColIndex = cols.findIndex((col) => col.id.toString() === overId);
 
     if (overColIndex !== -1) {
       if (activeColIndex === overColIndex) return;
@@ -203,8 +165,12 @@ export function Board() {
     const overId = over.id.toString();
 
     if (!activId.includes("task") && !overId.includes("task")) {
-      const activeColIndex = cols.findIndex((col) => col.id === activId);
-      const overColIndex = cols.findIndex((col) => col.id === overId);
+      const activeColIndex = cols.findIndex(
+        (col) => col.id.toString() === activId,
+      );
+      const overColIndex = cols.findIndex(
+        (col) => col.id.toString() === overId,
+      );
 
       if (
         activeColIndex !== -1 &&
@@ -245,27 +211,44 @@ export function Board() {
   };
 
   return (
-    <DndContext
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto snap-x pb-4 h-[90%]">
-        <SortableContext items={cols.map((col) => col.id)}>
-          {cols.map((col) => (
-            <Column key={col.id} column={col} />
-          ))}
-        </SortableContext>
+    <div className="flex flex-col h-full">
+      <div className="flex flex-row items-center justify-between px-1 mb-4">
+        <h3 className="text-2xl font-medium">{currBoard.name}</h3>
+        <Button>
+          <PlusCircle />
+          Add Column
+        </Button>
       </div>
-      <DragOverlay>
-        {activeCol && <Column column={activeCol} />}
-        {activeTask && <Task task={activeTask} />}
-      </DragOverlay>
-    </DndContext>
+      <DndContext
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto snap-x pb-4 h-[90%]">
+          <SortableContext items={cols.map((col) => col.id)}>
+            {cols.map((col) => (
+              <Column key={col.id} column={col} action={saveTask} />
+            ))}
+          </SortableContext>
+        </div>
+        <DragOverlay>
+          {activeCol && <Column column={activeCol} action={saveTask} />}
+          {activeTask && <Task task={activeTask} />}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 }
 
-export function Column({ column }: { column: Column }) {
+export function Column({
+  column,
+  action,
+}: {
+  column: ColumnWithTasks;
+  action: (title: string, col: number) => void;
+}) {
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [title, setTitle] = useState("");
   const {
     attributes,
     listeners,
@@ -274,31 +257,51 @@ export function Column({ column }: { column: Column }) {
     transition,
     isDragging,
   } = useSortable({ id: column.id });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const save = () => {
+    action(title, column.id);
+    setIsAddingTask(false);
+    setTitle("");
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex flex-col rounded-lg border bg-card flex-shrink-0 snap-center p-2 w-72 h-full",
+        "flex flex-col rounded-lg border bg-card flex-shrink-0 snap-center p-2 w-72 h-[95%]",
         isDragging && "opacity-70 shadow-lg",
       )}
       {...attributes}
     >
-      <div
-        className="flex items-center justify-between px-1 mb-4"
-        {...listeners}
-      >
-        <h3 className="text-xl font-medium">{column.name}</h3>
-        <GripVertical
-          className={cn(
-            "h-4 w-4 text-muted-foreground cursor-grab",
-            isDragging && "cursor-grabbing",
-          )}
-        />
+      <div className="flex items-center justify-between px-1 mb-4">
+        <div className="flex items-center gap-2">
+          <GripVertical
+            className={cn(
+              "h-4 w-4 cursor-grab text-muted-foreground",
+              isDragging && "cursor-grabbing",
+            )}
+            {...listeners}
+          />
+          <h3 className="text-xl font-medium">{column.name}</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0"
+            onClick={() => setIsAddingTask(true)}
+            disabled={isAddingTask}
+          >
+            <Plus size={20} className="text-muted-foreground" />
+            <span className="sr-only">Add task</span>
+          </Button>
+        </div>
       </div>
       <div className="flex-1 space-y-2 h-full">
         <SortableContext items={column.tasks.map((task) => task.id)}>
@@ -306,7 +309,34 @@ export function Column({ column }: { column: Column }) {
             <Task key={task.id} task={task} />
           ))}
         </SortableContext>
-        {column.tasks.length === 0 && (
+        {isAddingTask && (
+          <Card className="border-dashed border-2">
+            <CardHeader className="px-2 py-0">
+              <Input
+                type="text"
+                placeholder="Task name"
+                className="text-xs md:text-md font-medium border-none p-1"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+              />
+            </CardHeader>
+            <CardFooter className="flex gap-2 justify-end px-2 py-0">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-6 w-6"
+                onClick={() => setIsAddingTask(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button size="sm" className="h-6 w-6" onClick={save}>
+                <Check className="h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+        {!isAddingTask && column.tasks.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground text-xs md:text-sm">No tasks</p>
           </div>
@@ -343,7 +373,7 @@ export function Task({ task }: { task: Task }) {
       )}
     >
       <CardHeader>
-        <CardTitle>{task.name}</CardTitle>
+        <CardTitle>{task.title}</CardTitle>
       </CardHeader>
     </Card>
   );

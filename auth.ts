@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { boards, columns } from "@/db/schema";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
@@ -33,5 +34,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   pages: {
     signIn: "/login",
+  },
+  events: {
+    async createUser({ user }) {
+      const [defaultBoard] = await db
+        .insert(boards)
+        .values({
+          name: "My first board",
+          owner: user.id!,
+        })
+        .returning();
+      const defaultColumns = [
+        { name: "To Do", index: 0 },
+        { name: "In Progress", index: 1 },
+        { name: "Done", index: 2 },
+      ];
+
+      await db.insert(columns).values(
+        defaultColumns.map((column) => ({
+          name: column.name,
+          board: defaultBoard.id,
+          index: column.index,
+        })),
+      );
+    },
   },
 });

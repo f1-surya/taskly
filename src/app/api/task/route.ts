@@ -1,74 +1,43 @@
+import { db } from "@/db";
+import { boards, columns, tasks } from "@/db/schema";
 import { auth } from "auth";
+import { NextResponse } from "next/server";
+import "server-only";
+import { taskInsertSchema } from "@/lib/zod-schemas";
+import { eq } from "drizzle-orm";
 
-/**
- * Handles the POST request for creating a new task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function POST(req: Request): Promise<Response> {
-  try {
-    const session = await auth();
-    if (!session) {
-      return Response.json({ message: "User not found" }, { status: 404 });
-    }
-
-    const body = await req.json();
-    return Response.json({}, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
+export const POST = auth(async (req) => {
+  const user = req.auth?.user;
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
   }
-}
 
-/**
- * Handles the PUT request for updating an existing task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function PUT(req: Request): Promise<Response> {
-  try {
-    const session = await auth();
-    if (!session) {
-      return Response.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const cleanBody = Object.fromEntries(
-      Object.entries(body).filter(([_, v]) => v != null),
+  const body = await req.json();
+  const parseResult = taskInsertSchema.safeParse(body);
+  if (!parseResult.success) {
+    return new Response(
+      JSON.stringify({ message: parseResult.error.message }),
+      {
+        status: 400,
+      },
     );
-    delete cleanBody.createdAt;
-    delete cleanBody.updatedAt;
-    delete cleanBody.id;
-    delete cleanBody.userId;
-    const task = {};
-    return Response.json(task, { status: 201 });
-  } catch (e) {
-    console.error(e);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
   }
-}
 
-/**
- * Handles the DELETE request for deleting a task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function DELETE(req: Request): Promise<Response> {
-  try {
-    const { id } = await req.json();
-    const session = await auth();
-    if (!session) {
-      return Response.json({ message: "User not found" }, { status: 404 });
-    }
-    return Response.json(
-      { message: "Task deleted successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.log(error);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
+  const currCol = await db.query.columns.findFirst({
+    where: eq(columns.id, parseResult.data.column),
+    with: {
+      board: true,
+    },
+  });
+
+  if (!currCol) {
+    return NextResponse.json({ message: "Column not found" }, { status: 404 });
   }
-}
+  if (!currCol.board && currCol.board.owner !== user.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const [task] = await db.insert(tasks).values(parseResult.data).returning();
+
+  return NextResponse.json(task);
+});

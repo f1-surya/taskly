@@ -26,7 +26,7 @@ export const users = t.pgTable(
 );
 
 export const userRelations = relations(users, ({ many }) => ({
-  columns: many(columns),
+  boards: many(boards),
 }));
 
 export const accounts = t.pgTable(
@@ -105,23 +105,27 @@ export const authenticators = t.pgTable(
   ],
 );
 
-export const tasks = t.pgTable(
-  "tasks",
+export const boards = t.pgTable(
+  "boards",
   {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
-    title: t.varchar().notNull(),
-    column: t
-      .integer()
+    name: t.varchar().notNull(),
+    isPinned: t.boolean().notNull().default(false),
+    owner: t
+      .text()
       .notNull()
-      .references(() => columns.id),
-    index: t.integer().notNull(),
+      .references(() => users.id, { onDelete: "cascade" }),
     ...timestamps,
   },
-  (table) => [t.index("columnIndex").on(table.column)],
+  (table) => [t.index("id_idx").on(table.id)],
 );
 
-export const taskRelations = relations(tasks, ({ one }) => ({
-  column: one(columns),
+export const boardRelations = relations(boards, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [boards.owner],
+    references: [users.id],
+  }),
+  columns: many(columns),
 }));
 
 export const columns = t.pgTable(
@@ -129,17 +133,45 @@ export const columns = t.pgTable(
   {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
     name: t.varchar().notNull(),
-    owner: t
-      .text()
+    board: t
+      .integer()
       .notNull()
-      .references(() => users.id),
+      .references(() => boards.id, { onDelete: "cascade" }),
     index: t.integer().notNull(),
     ...timestamps,
   },
-  (table) => [t.index("owner").on(table.owner)],
+  (table) => [t.index("parent_idx").on(table.board)],
 );
 
 export const columnRelations = relations(columns, ({ one, many }) => ({
-  owner: one(users),
+  board: one(boards, {
+    fields: [columns.id],
+    references: [boards.id],
+  }),
   tasks: many(tasks),
+}));
+
+export const tasks = t.pgTable(
+  "tasks",
+  {
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => `task-${crypto.randomUUID()}`),
+    title: t.varchar().notNull(),
+    column: t
+      .integer()
+      .notNull()
+      .references(() => columns.id, { onDelete: "cascade" }),
+    index: t.integer().notNull(),
+    ...timestamps,
+  },
+  (table) => [t.index("columnIndex").on(table.column)],
+);
+
+export const taskRelations = relations(tasks, ({ one }) => ({
+  column: one(columns, {
+    fields: [tasks.column],
+    references: [columns.id],
+  }),
 }));
