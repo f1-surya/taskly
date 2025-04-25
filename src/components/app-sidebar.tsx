@@ -9,12 +9,13 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { fetcher } from "@/lib/utils";
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, Pin, PinOff } from "lucide-react";
 import { useState } from "react";
 import useSWR from "swr";
 import { Button } from "./ui/button";
@@ -29,12 +30,13 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export function AppSidebar() {
   const { data: userBoards, isLoading, mutate } = useSWR("/api/board", fetcher);
   const [boardName, setBoardName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { board: boardId } = useParams<{ board: string }>();
   const router = useRouter();
 
   const pinned = userBoards?.filter((board) => board.isPinned);
@@ -65,6 +67,25 @@ export function AppSidebar() {
     }
   };
 
+  const handlePin = async (boardId: number, isPinned: boolean) => {
+    const response = await fetch(`/api/board?id=${boardId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        isPinned,
+      }),
+    });
+    if (response.ok) {
+      const board = await response.json();
+      mutate((boards) => boards.map((b) => (b.id === boardId ? board : b)));
+    } else {
+      const error = await response.json();
+      toast.error(error.message);
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader />
@@ -85,9 +106,17 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {pinned.map((board) => (
                     <SidebarMenuItem key={board.id}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={board.id === parseInt(boardId)}
+                      >
                         <a href={`/boards/${board.id}`}>{board.name}</a>
                       </SidebarMenuButton>
+                      <SidebarMenuAction
+                        onClick={() => handlePin(board.id, false)}
+                      >
+                        <PinOff />
+                      </SidebarMenuAction>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
@@ -101,9 +130,17 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {unpinned.map((board) => (
                     <SidebarMenuItem key={board.id}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={board.id === parseInt(boardId)}
+                      >
                         <a href={`/boards/${board.id}`}>{board.name}</a>
                       </SidebarMenuButton>
+                      <SidebarMenuAction
+                        onClick={() => handlePin(board.id, true)}
+                      >
+                        <Pin />
+                      </SidebarMenuAction>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>

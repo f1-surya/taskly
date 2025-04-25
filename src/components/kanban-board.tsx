@@ -11,22 +11,47 @@ import {
 import { arrayMove, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, Plus, PlusCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Task, Board, ColumnWithTasks } from "@/types/db";
+import type { Task, ColumnWithTasks, BoardWithColumns } from "@/types/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 interface BoardProps {
-  currBoard: Board;
-  columns: ColumnWithTasks[];
+  currBoard: BoardWithColumns;
 }
 
-export function KanbanBoard({ currBoard, columns }: BoardProps) {
-  const [cols, setCols] = useState(columns);
+export function KanbanBoard({ currBoard }: BoardProps) {
+  const [boardName, setBoardName] = useState(currBoard.name);
+  const [cols, setCols] = useState(currBoard.columns);
   const [activeCol, setActiveCol] = useState<ColumnWithTasks | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const lastSavedName = useRef(boardName);
+
+  useEffect(() => {
+    const timeOut = setTimeout(() => {
+      if (lastSavedName.current !== boardName) {
+        fetch(`/api/board?id=${currBoard.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: boardName }),
+        })
+          .then((res) => {
+            if (res.ok) {
+              lastSavedName.current = boardName;
+            }
+          })
+          .catch((err) => {
+            toast.error(err.message);
+          });
+      }
+    }, 500);
+
+    return () => clearTimeout(timeOut);
+  }, [boardName]);
 
   const saveTask = async (title: string, column: number) => {
     const col = cols.find((col) => col.id === column);
@@ -213,7 +238,11 @@ export function KanbanBoard({ currBoard, columns }: BoardProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row items-center justify-between px-1 mb-4">
-        <h3 className="text-2xl font-medium">{currBoard.name}</h3>
+        <input
+          className="text-2xl font-medium focus:outline-none"
+          value={boardName}
+          onChange={(e) => setBoardName(e.target.value)}
+        />
         <Button>
           <PlusCircle />
           Add Column

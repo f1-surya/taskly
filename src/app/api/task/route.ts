@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { boards, columns, tasks } from "@/db/schema";
+import { columns, tasks } from "@/db/schema";
 import { auth } from "auth";
 import { NextResponse } from "next/server";
 import "server-only";
@@ -15,11 +15,9 @@ export const POST = auth(async (req) => {
   const body = await req.json();
   const parseResult = taskInsertSchema.safeParse(body);
   if (!parseResult.success) {
-    return new Response(
-      JSON.stringify({ message: parseResult.error.message }),
-      {
-        status: 400,
-      },
+    return NextResponse.json(
+      { message: parseResult.error.message },
+      { status: 400 },
     );
   }
 
@@ -33,6 +31,7 @@ export const POST = auth(async (req) => {
   if (!currCol) {
     return NextResponse.json({ message: "Column not found" }, { status: 404 });
   }
+
   if (!currCol.board && currCol.board.owner !== user.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }

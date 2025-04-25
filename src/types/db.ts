@@ -8,3 +8,7 @@ export type Task = InferSelectModel<typeof tasks>;
 export type ColumnWithTasks = Column & {
   tasks: Task[];
 };
+
+export type BoardWithColumns = Board & {
+  columns: ColumnWithTasks[];
+};

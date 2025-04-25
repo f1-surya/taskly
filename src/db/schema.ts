@@ -145,7 +145,7 @@ export const columns = t.pgTable(
 
 export const columnRelations = relations(columns, ({ one, many }) => ({
   board: one(boards, {
-    fields: [columns.id],
+    fields: [columns.board],
     references: [boards.id],
   }),
   tasks: many(tasks),
