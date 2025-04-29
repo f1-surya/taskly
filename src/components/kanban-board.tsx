@@ -1,6 +1,12 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import type {
+  BoardWithColumns,
+  Column,
+  ColumnWithTasks,
+  Task,
+} from "@/types/db";
 import {
   DndContext,
   type DragEndEvent,
@@ -8,15 +14,23 @@ import {
   DragOverlay,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Plus, PlusCircle, X } from "lucide-react";
+import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { PlusCircle } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Task, ColumnWithTasks, BoardWithColumns } from "@/types/db";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { AddColumn } from "./kanban/add-column";
+import KanbanTask from "./kanban/task";
+import KanbanColumn from "./kanban/column";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 
 interface BoardProps {
   currBoard: BoardWithColumns;
@@ -27,6 +41,11 @@ export function KanbanBoard({ currBoard }: BoardProps) {
   const [cols, setCols] = useState(currBoard.columns);
   const [activeCol, setActiveCol] = useState<ColumnWithTasks | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [createColumn, setCreateColumn] = useState(false);
+  const [colToDelete, setColToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const lastSavedName = useRef(boardName);
 
   useEffect(() => {
@@ -52,6 +71,48 @@ export function KanbanBoard({ currBoard }: BoardProps) {
 
     return () => clearTimeout(timeOut);
   }, [boardName]);
+
+  const saveColumn = (name: string) => {
+    fetch("/api/column", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, board: currBoard.id, index: cols.length }),
+    }).then(async (res) => {
+      if (res.ok) {
+        toast.success("Column created");
+        const newCol = await res.json();
+        setCols((prev) => [...prev, { ...newCol, tasks: [] }]);
+        setCreateColumn(false);
+      } else {
+        toast.error("Failed to create column");
+      }
+    });
+  };
+
+  const onDeleteCol = (col: number) => {
+    setColToDelete({ id: col, name: cols.find((c) => c.id === col)!.name });
+  };
+
+  const deleteCol = async (col: number) => {
+    const res = await fetch(`/api/column?id=${col}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      toast.success("Column deleted");
+      setCols((prev) => {
+        const newCols = prev.filter((c) => c.id !== col);
+        for (let i = 0; i < newCols.length; i++) {
+          newCols[i].index = i;
+        }
+        return newCols;
+      });
+    } else {
+      toast.error("Failed to delete column");
+    }
+  };
 
   const saveTask = async (title: string, column: number) => {
     const col = cols.find((col) => col.id === column);
@@ -202,7 +263,10 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         overColIndex !== -1 &&
         activeColIndex !== overColIndex
       ) {
-        setCols((cols) => arrayMove(cols, activeColIndex, overColIndex));
+        const movedCols = arrayMove(cols, activeColIndex, overColIndex);
+        const oldCols = [...cols];
+        setCols(movedCols);
+        saveColsOrder(oldCols, movedCols);
       }
       return;
     }
@@ -235,6 +299,45 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     }
   };
 
+  const saveColsOrder = async (
+    oldCols: ColumnWithTasks[],
+    newCols: ColumnWithTasks[],
+  ) => {
+    const colsToSave: ColumnWithTasks[] = [];
+    for (let i = 0; i < newCols.length; i++) {
+      const col = newCols[i];
+      if (col.index !== i) {
+        colsToSave.push({ ...col, index: i });
+      }
+    }
+    if (colsToSave.length > 0) {
+      const res = await fetch("/api/column/batch", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(colsToSave),
+      });
+      if (res.ok) {
+        // Update index of cols using colsToSave
+        setCols((prev) => {
+          const newCols = [...prev];
+          for (const col of colsToSave) {
+            const index = newCols.findIndex((c) => c.id === col.id);
+            if (index !== -1) {
+              newCols[index] = { ...col, index: col.index };
+            }
+          }
+          return newCols;
+        });
+        toast.success("Columns re-ordered");
+      } else {
+        toast.error("Failed to update columns");
+        setCols(oldCols);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row items-center justify-between px-1 mb-4">
@@ -243,11 +346,20 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           value={boardName}
           onChange={(e) => setBoardName(e.target.value)}
         />
-        <Button>
+        <Button onClick={() => setCreateColumn(!createColumn)}>
           <PlusCircle />
           Add Column
         </Button>
       </div>
+      <AnimatePresence>
+        {createColumn && (
+          <AddColumn
+            onSave={saveColumn}
+            onCancel={() => setCreateColumn(false)}
+            key="add-column"
+          />
+        )}
+      </AnimatePresence>
       <DndContext
         onDragStart={onDragStart}
         onDragOver={onDragOver}
@@ -256,154 +368,55 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         <div className="flex gap-4 overflow-x-auto snap-x pb-4 h-[90%]">
           <SortableContext items={cols.map((col) => col.id)}>
             {cols.map((col) => (
-              <Column key={col.id} column={col} action={saveTask} />
+              <KanbanColumn
+                key={col.id}
+                column={col}
+                action={saveTask}
+                onDelete={onDeleteCol}
+              />
             ))}
           </SortableContext>
         </div>
         <DragOverlay>
-          {activeCol && <Column column={activeCol} action={saveTask} />}
-          {activeTask && <Task task={activeTask} />}
+          {activeCol && (
+            <KanbanColumn
+              column={activeCol}
+              action={saveTask}
+              onDelete={onDeleteCol}
+            />
+          )}
+          {activeTask && <KanbanTask task={activeTask} />}
         </DragOverlay>
       </DndContext>
+      <AlertDialog
+        open={colToDelete !== null}
+        onOpenChange={() => setColToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to delete <b>{colToDelete?.name}</b>. This will
+              delete the column and the tasks inside it. And it cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setColToDelete(null)}>
+              Cancel
+            </AlertDialogAction>
+            <AlertDialogAction
+              className="bg-destructive"
+              onClick={() => {
+                deleteCol(colToDelete!.id);
+                setColToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  );
-}
-
-export function Column({
-  column,
-  action,
-}: {
-  column: ColumnWithTasks;
-  action: (title: string, col: number) => void;
-}) {
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [title, setTitle] = useState("");
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: column.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const save = () => {
-    action(title, column.id);
-    setIsAddingTask(false);
-    setTitle("");
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "flex flex-col rounded-lg border bg-card flex-shrink-0 snap-center p-2 w-72 h-[95%]",
-        isDragging && "opacity-70 shadow-lg",
-      )}
-      {...attributes}
-    >
-      <div className="flex items-center justify-between px-1 mb-4">
-        <div className="flex items-center gap-2">
-          <GripVertical
-            className={cn(
-              "h-4 w-4 cursor-grab text-muted-foreground",
-              isDragging && "cursor-grabbing",
-            )}
-            {...listeners}
-          />
-          <h3 className="text-xl font-medium">{column.name}</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-0"
-            onClick={() => setIsAddingTask(true)}
-            disabled={isAddingTask}
-          >
-            <Plus size={20} className="text-muted-foreground" />
-            <span className="sr-only">Add task</span>
-          </Button>
-        </div>
-      </div>
-      <div className="flex-1 space-y-2 h-full">
-        <SortableContext items={column.tasks.map((task) => task.id)}>
-          {column.tasks.map((task) => (
-            <Task key={task.id} task={task} />
-          ))}
-        </SortableContext>
-        {isAddingTask && (
-          <Card className="border-dashed border-2">
-            <CardHeader className="px-2 py-0">
-              <Input
-                type="text"
-                placeholder="Task name"
-                className="text-xs md:text-md font-medium border-none p-1"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-              />
-            </CardHeader>
-            <CardFooter className="flex gap-2 justify-end px-2 py-0">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-6 w-6"
-                onClick={() => setIsAddingTask(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <Button size="sm" className="h-6 w-6" onClick={save}>
-                <Check className="h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-        {!isAddingTask && column.tasks.length === 0 && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground text-xs md:text-sm">No tasks</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function Task({ task }: { task: Task }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <Card
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={style}
-      className={cn(
-        "cursor-grab shadow-sm touch-manipulation",
-        isDragging && "opacity-70 shadow-md cursor-grabbing",
-      )}
-    >
-      <CardHeader>
-        <CardTitle>{task.title}</CardTitle>
-      </CardHeader>
-    </Card>
   );
 }

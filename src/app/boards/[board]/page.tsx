@@ -1,5 +1,5 @@
 import { KanbanBoard } from "@/components/kanban-board";
-import { boards } from "@/db/schema";
+import { boards, columns } from "@/db/schema";
 import { db } from "@/db";
 import { auth } from "auth";
 import { and, eq } from "drizzle-orm";
@@ -26,6 +26,7 @@ export default async function Tasks({
         with: {
           tasks: true,
         },
+        orderBy: columns.index,
       },
     },
   });
