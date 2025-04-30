@@ -1,13 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import CustomField from "@/components/ui/customfield";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { auth, signIn } from "auth";
-import { Metadata } from "next";
-import Image from "next/image";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Login | Task Manager",
+  title: "Login | Taskly",
 };
 
 export default async function Login() {
@@ -17,43 +23,33 @@ export default async function Login() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col sm:flex-row items-center justify-center gap-24 bg-white">
-      <Image
-        src="/login.jpg"
-        alt="Logo"
-        width={400}
-        height={400}
-        className="hidden sm:block"
-      />
-      <Card className="p-12">
-        <Image
-          src="/logo.svg"
-          alt="Logo"
-          width={50}
-          height={50}
-          className="mx-auto"
-        />
-        {process.env.NODE_ENV === "development" && (
+    <main className="flex h-screen w-full items-center justify-center">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Welcome</CardTitle>
+          <CardDescription>Login to your account to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
           <form
-            className="flex flex-col items-center gap-2"
-            action={async (formData) => {
+            action={async () => {
               "use server";
-              await signIn("credentials", formData);
+              await signIn("github");
             }}
           >
-            <h1 className="text-3xl font-semibold">Login</h1>
-            <CustomField name="password" title="Password" type="password" />
-            <Button type="submit">Login</Button>
+            <Button
+              variant="outline"
+              className="w-full relative overflow-hidden"
+            >
+              <GitHubLogoIcon />
+              <span>Sign in with Github</span>
+            </Button>
           </form>
-        )}
-        <form
-          action={async () => {
-            "use server";
-            await signIn("github");
-          }}
-        >
-          <Button>Login with GitHub</Button>
-        </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-center text-muted-foreground text-sm">
+            By using Taskly, you agree to our Terms of Service
+          </p>
+        </CardFooter>
       </Card>
     </main>
   );

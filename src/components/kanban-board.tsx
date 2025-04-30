@@ -406,7 +406,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
               Cancel
             </AlertDialogAction>
             <AlertDialogAction
-              className="bg-destructive"
+              className="bg-destructive text-destructive-foreground"
               onClick={() => {
                 deleteCol(colToDelete!.id);
                 setColToDelete(null);
