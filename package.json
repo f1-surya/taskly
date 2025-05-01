@@ -60,7 +60,6 @@
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
     "@vitejs/plugin-react": "^4.4.1",
-    "cypress": "^13.17.0",
     "drizzle-kit": "^0.30.6",
     "eslint": "^9.25.1",
     "eslint-config-next": "15.0.3",

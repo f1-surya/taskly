@@ -15,3 +15,8 @@ export const columnBatchUpdateSchema = z.array(
 );
 
 export const taskInsertSchema = createInsertSchema(tasks);
+export const taskUpdateSchema = createUpdateSchema(tasks);
+export const taskBatchUpdateSchema = z.record(
+  z.string(),
+  z.array(taskUpdateSchema),
+);

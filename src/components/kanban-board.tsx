@@ -1,12 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type {
-  BoardWithColumns,
-  Column,
-  ColumnWithTasks,
-  Task,
-} from "@/types/db";
+import type { BoardWithColumns, ColumnWithTasks, Task } from "@/types/db";
 import {
   DndContext,
   type DragEndEvent,
@@ -31,6 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
+import { taskBatchUpdateSchema, taskUpdateSchema } from "@/lib/zod-schemas";
+import { z } from "zod";
 
 interface BoardProps {
   currBoard: BoardWithColumns;
@@ -168,19 +165,25 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
+    // Skip if nothing has changed.
     if (activeId == overId) return;
+
+    // Skip if a column is being dragged over since it will be handled in dragEnd
     if (!activeId.includes("task")) return;
 
+    // Get the index of the column that the task is in.
     const activeColIndex = cols.findIndex((col) =>
       col.tasks.some((task) => task.id === activeId),
     );
     if (activeColIndex === -1) return;
 
+    // Find the destination of the task. Could be a column or another task.
     const overColIndex = cols.findIndex((col) => col.id.toString() === overId);
 
     if (overColIndex !== -1) {
       if (activeColIndex === overColIndex) return;
 
+      // Only update if its moving to a different column.
       setCols((prev) => {
         const activeCol = prev[activeColIndex];
         const taskIndex = activeCol.tasks.findIndex(
@@ -192,11 +195,13 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         const task = activeCol.tasks[taskIndex];
 
         const newCols = [...prev];
+        // Remove the task from the source column.
         newCols[activeColIndex] = {
           ...activeCol,
           tasks: activeCol.tasks.filter((task) => task.id !== activeId),
         };
 
+        // Add the task to the destination column.
         newCols[overColIndex] = {
           ...newCols[overColIndex],
           tasks: [...newCols[overColIndex].tasks, task],
@@ -207,12 +212,15 @@ export function KanbanBoard({ currBoard }: BoardProps) {
       return;
     }
 
+    // Dropping on another task.
     const overTaskColIndex = cols.findIndex((col) =>
       col.tasks.some((task) => task.id === overId),
     );
     if (overTaskColIndex !== -1 && overTaskColIndex !== activeColIndex) {
       setCols((prev) => {
         const newCols = [...prev];
+
+        // Find the task in the source column.
         const activeCol = newCols[activeColIndex];
         const taskIndex = activeCol.tasks.findIndex(
           (task) => task.id === activeId,
@@ -220,15 +228,19 @@ export function KanbanBoard({ currBoard }: BoardProps) {
 
         if (taskIndex === -1) return prev;
 
+        // Remove the task from the source column.
         newCols[activeColIndex] = {
           ...activeCol,
           tasks: activeCol.tasks.filter((task) => task.id !== activeId),
         };
 
+        // Find the position in the destination column.
         const overCol = newCols[overTaskColIndex];
         const overTaskIndex = overCol.tasks.findIndex(
           (task) => task.id === activeId,
         );
+
+        // Insert the task at the correct position.
         const newTasks = [...overCol.tasks];
         newTasks.splice(overTaskIndex, 0, activeCol.tasks[taskIndex]);
         newCols[overTaskColIndex] = {
@@ -250,6 +262,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     const activId = active.id.toString();
     const overId = over.id.toString();
 
+    // Check if the columns are being re-ordered.
     if (!activId.includes("task") && !overId.includes("task")) {
       const activeColIndex = cols.findIndex(
         (col) => col.id.toString() === activId,
@@ -271,6 +284,8 @@ export function KanbanBoard({ currBoard }: BoardProps) {
       return;
     }
 
+    const newCols = [...cols];
+    // Handle reordering within the same column.
     if (activId.includes("task") && overId.includes("task")) {
       const activeColIndex = cols.findIndex((col) =>
         col.tasks.some((task) => task.id === activId),
@@ -287,16 +302,32 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         (task) => task.id === overId,
       );
       if (overTaskIndex !== -1 && taskIndex !== overTaskIndex) {
-        setCols((prev) => {
-          const newCols = [...prev];
-          newCols[activeColIndex] = {
-            ...activeCol,
-            tasks: arrayMove(activeCol.tasks, taskIndex, overTaskIndex),
-          };
-          return newCols;
-        });
+        newCols[activeColIndex] = {
+          ...activeCol,
+          tasks: arrayMove(activeCol.tasks, taskIndex, overTaskIndex),
+        };
       }
     }
+
+    // Persist the modified columns.
+
+    const modifiedCols: {
+      [colId: number]: z.infer<typeof taskUpdateSchema>[];
+    } = {};
+    for (const col of newCols) {
+      for (let i = 0; i < col.tasks.length; i++) {
+        const task = col.tasks[i];
+        if (task.index !== i || task.column !== col.id) {
+          modifiedCols[col.id] = [
+            ...(modifiedCols[col.id] || []),
+            { id: task.id!, index: i, column: col.id },
+          ];
+        }
+      }
+    }
+
+    setCols(newCols);
+    saveTasks(modifiedCols);
   };
 
   const saveColsOrder = async (
@@ -330,11 +361,27 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           }
           return newCols;
         });
-        toast.success("Columns re-ordered");
       } else {
         toast.error("Failed to update columns");
         setCols(oldCols);
       }
+    }
+  };
+
+  const saveTasks = async (tasks: {
+    [colId: number]: z.infer<typeof taskUpdateSchema>[];
+  }) => {
+    const res = await fetch(`/api/task/batch?board=${currBoard.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(tasks),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      toast.error(err.message);
     }
   };
 

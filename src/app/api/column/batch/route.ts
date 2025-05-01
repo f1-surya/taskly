@@ -39,11 +39,11 @@ export const PUT = auth(async (req) => {
   }
 
   const columnIds = parseResult.data.map((col) => col.id);
-  const existingColumn = await db.query.columns.findMany({
+  const existingColumns = await db.query.columns.findMany({
     where: and(eq(columns.board, boardId), inArray(columns.id, columnIds)),
   });
 
-  if (existingColumn.length !== columnIds.length) {
+  if (existingColumns.length !== columnIds.length) {
     return NextResponse.json(
       {
         message: "One or more columns exist or don't belong to the same board.",
