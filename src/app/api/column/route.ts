@@ -1,10 +1,10 @@
-import { boards, columns } from "@/db/schema";
 import { db } from "@/db";
+import { boards, columns } from "@/db/schema";
 import { columnInsertSchema } from "@/lib/zod-schemas";
 import { auth } from "auth";
-import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { w } from "node_modules/@faker-js/faker/dist/airline-BUL6NtOJ";
+import "server-only";
 
 export const POST = auth(async (req) => {
   const user = req.auth?.user;
@@ -69,16 +69,18 @@ export const DELETE = auth(async (req) => {
   }
 
   await db.transaction(async (tx) => {
-    await tx.delete(columns).where(eq(columns.id, parseInt(id)));
-    await tx
-      .update(columns)
-      .set({ index: sql`${columns.index} - 1` })
-      .where(
-        and(
-          eq(columns.board, currCol.board.id),
-          gt(columns.index, currCol.index),
+    await Promise.all([
+      tx.delete(columns).where(eq(columns.id, parseInt(id))),
+      tx
+        .update(columns)
+        .set({ index: sql`${columns.index} - 1` })
+        .where(
+          and(
+            eq(columns.board, currCol.board.id),
+            gt(columns.index, currCol.index),
+          ),
         ),
-      );
+    ]);
   });
 
   return NextResponse.json({ message: "Column deleted successfully" });

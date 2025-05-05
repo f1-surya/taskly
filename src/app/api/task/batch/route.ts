@@ -12,7 +12,6 @@ export const PUT = auth(async (req) => {
   }
 
   const body = await req.json();
-  console.log(body);
   const parseResult = taskBatchUpdateSchema.safeParse(body);
   if (!parseResult.success) {
     return NextResponse.json(
@@ -66,7 +65,6 @@ export const PUT = auth(async (req) => {
       }
 
       for (const currTask of modifiedTasks) {
-        console.log(currTask);
         updatePromises.push(
           tx.update(tasks).set(currTask).where(eq(tasks.id, currTask.id!)),
         );

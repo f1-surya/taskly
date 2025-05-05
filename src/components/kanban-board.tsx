@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { taskUpdateSchema } from "@/lib/zod-schemas";
 import type { BoardWithColumns, ColumnWithTasks, Task } from "@/types/db";
 import {
   DndContext,
@@ -8,15 +10,21 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
-import { PlusCircle } from "lucide-react";
+import { Delete, PlusCircle, Trash } from "lucide-react";
 import { AnimatePresence } from "motion/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { AddColumn } from "./kanban/add-column";
-import KanbanTask from "./kanban/task";
 import KanbanColumn from "./kanban/column";
+import KanbanTask from "./kanban/task";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,8 +34,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { taskBatchUpdateSchema, taskUpdateSchema } from "@/lib/zod-schemas";
-import { z } from "zod";
+import { Input } from "./ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "./ui/sheet";
+import { Textarea } from "./ui/textarea";
 
 interface BoardProps {
   currBoard: BoardWithColumns;
@@ -43,7 +59,82 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     id: number;
     name: string;
   } | null>(null);
+  const [currTask, setCurrTask] = useState<Task | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const isMobile = useIsMobile();
   const lastSavedName = useRef(boardName);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: isMobile ? 5 : 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+  );
+  const searchParams = useSearchParams();
+
+  const taskId = searchParams.get("task");
+
+  useEffect(() => {
+    if (taskId) {
+      for (const col of cols) {
+        const task = col.tasks.find((t) => t.id === taskId);
+        if (task) {
+          setCurrTask(task);
+        }
+      }
+    } else {
+      setCurrTask(null);
+    }
+  }, [taskId]);
+
+  useEffect(() => {
+    if (currTask) {
+      const taskToSave = {
+        id: currTask.id,
+        title: currTask.title,
+        body: currTask.body,
+        column: currTask.column,
+        index: currTask.index,
+      };
+      const timeOut = setTimeout(() => {
+        fetch("/api/task", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(taskToSave),
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              const data = await res.json();
+              toast.error(data.message);
+            } else {
+              const newCols = [...cols];
+              for (let i = 0; i < newCols.length; i++) {
+                const col = newCols[i];
+                if (col.id === currTask.column) {
+                  const currTaskIndex = col.tasks.findIndex(
+                    (task) => task.id === currTask.id,
+                  );
+                  if (currTaskIndex !== -1) {
+                    newCols[i].tasks[currTaskIndex] = currTask;
+                    setCols(newCols);
+                  }
+                }
+              }
+            }
+          })
+          .catch((err) => {
+            toast.error(err.message);
+          });
+      }, 500);
+      return () => clearTimeout(timeOut);
+    } else {
+      setCurrTask(null);
+    }
+  }, [currTask]);
 
   useEffect(() => {
     const timeOut = setTimeout(() => {
@@ -385,6 +476,34 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     }
   };
 
+  const deleteTask = async () => {
+    if (currTask) {
+      const res = await fetch(`/api/task?id=${currTask.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setCols((prev) => {
+          const newCols = [...prev];
+          const colIndex = prev.findIndex((col) => col.id === currTask.column);
+          if (colIndex !== -1) {
+            const currCol = { ...newCols[colIndex] };
+            currCol.tasks = currCol.tasks.filter(
+              (task) => task.id !== currTask.id,
+            );
+            for (let i = 0; i < currCol.tasks.length; i++) {
+              currCol.tasks[i].index = i;
+            }
+            newCols[colIndex] = currCol;
+          }
+          return newCols;
+        });
+        router.replace(pathname, { scroll: false });
+      } else {
+        toast.error("Failed to delete the selected task.");
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row items-center justify-between px-1 mb-4">
@@ -408,6 +527,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         )}
       </AnimatePresence>
       <DndContext
+        sensors={sensors}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={onDragEnd}
@@ -464,6 +584,37 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Sheet open={currTask !== null} onOpenChange={() => setCurrTask(null)}>
+        <SheetContent className="md:min-w-[600px] h-full">
+          <SheetHeader className="my-8 bg h-[70%]">
+            <SheetTitle>
+              <Input
+                className="md:text-xl font-bold focus:outline-none p-2 h-12 dark:bg-input/5"
+                autoFocus
+                value={currTask?.title}
+                onChange={(e) =>
+                  setCurrTask({ ...currTask!, title: e.target.value })
+                }
+              />
+            </SheetTitle>
+            <SheetDescription className="h-full">
+              <Textarea
+                className="mt-4 h-[65%] dark:bg-input/10 md:text-base text-secondary-foreground"
+                placeholder="Enter description"
+                value={currTask?.body ?? ""}
+                onChange={(e) =>
+                  setCurrTask({ ...currTask!, body: e.target.value })
+                }
+              />
+            </SheetDescription>
+          </SheetHeader>
+          <SheetFooter className="flex flex-row justify-end">
+            <Button size="icon" variant="destructive" onClick={deleteTask}>
+              <Trash />
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

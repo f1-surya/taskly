@@ -15,6 +15,13 @@
       "when": 1744815770369,
       "tag": "0001_thick_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746196833513,
+      "tag": "0002_milky_virginia_dare",
+      "breakpoints": true
     }
   ]
 }

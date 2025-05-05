@@ -159,6 +159,7 @@ export const tasks = t.pgTable(
       .primaryKey()
       .$defaultFn(() => `task-${crypto.randomUUID()}`),
     title: t.varchar().notNull(),
+    body: t.varchar(),
     column: t
       .integer()
       .notNull()
