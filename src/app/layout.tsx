@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Task Manager",
@@ -17,9 +15,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
-        <Toaster />
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <footer className="w-full border-t py-6">
+            <p className="text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Taskly. All rights reserved.
+            </p>
+          </footer>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

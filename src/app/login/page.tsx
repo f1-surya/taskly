@@ -1,38 +1,55 @@
-import { Card } from "@/components/ui/card";
-import { getSession } from "@/lib/auth";
-import { Metadata } from "next";
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
+import { auth, signIn } from "auth";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "Login | Task Manager",
+  title: "Login | Taskly",
 };
 
 export default async function Login() {
-  const session = await getSession();
-  if (session) {
-    redirect("/");
+  const session = await auth();
+  if (session?.user) {
+    redirect("/boards");
   }
 
   return (
-    <main className="flex min-h-screen flex-col sm:flex-row items-center justify-center gap-24 bg-white">
-      <Image
-        src="/login.jpg"
-        alt="Logo"
-        width={400}
-        height={400}
-        className="hidden sm:block"
-      />
-      <Card className="p-12">
-        <Image
-          src="/logo.svg"
-          alt="Logo"
-          width={50}
-          height={50}
-          className="mx-auto"
-        />
-        <LoginForm />
+    <main className="flex h-screen w-full items-center justify-center">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Welcome</CardTitle>
+          <CardDescription>Login to your account to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            action={async () => {
+              "use server";
+              await signIn("github");
+            }}
+          >
+            <Button
+              variant="outline"
+              className="w-full relative overflow-hidden"
+            >
+              <GitHubLogoIcon />
+              <span>Sign in with Github</span>
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-center text-muted-foreground text-sm">
+            By using Taskly, you agree to our Terms of Service
+          </p>
+        </CardFooter>
       </Card>
     </main>
   );

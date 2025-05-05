@@ -1,80 +1,130 @@
-import { getSession } from "@/lib/auth";
-import prisma from "@/lib/db";
+import { db } from "@/db";
+import { columns, tasks } from "@/db/schema";
+import { auth } from "auth";
+import { NextResponse } from "next/server";
+import "server-only";
+import { taskInsertSchema, taskUpdateSchema } from "@/lib/zod-schemas";
+import { and, eq, gt, sql } from "drizzle-orm";
 
-/**
- * Handles the POST request for creating a new task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function POST(req: Request): Promise<Response> {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return Response.json({ message: "User not found" }, { status: 404 });
-    }
-
-    const body = await req.json();
-    const task = await prisma.tasks.create({
-      data: { ...body, userId: session.uid },
-    });
-    return Response.json(task, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
+export const POST = auth(async (req) => {
+  const user = req.auth?.user;
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
   }
-}
 
-/**
- * Handles the PUT request for updating an existing task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function PUT(req: Request): Promise<Response> {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return Response.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const cleanBody = Object.fromEntries(Object.entries(body).filter(([_, v]) => v != null));
-    delete cleanBody.createdAt
-    delete cleanBody.updatedAt
-    delete cleanBody.id
-    delete cleanBody.userId
-    const task = await prisma.tasks.update({
-      where: { id: body.id },
-      data: cleanBody,
-    });
-    return Response.json(task, { status: 201 });
-  } catch (e) {
-    console.error(e);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
-  }
-}
-
-/**
- * Handles the DELETE request for deleting a task.
- *
- * @param {Request} req - The request object.
- * @return {Promise<Response>} The response object.
- */
-export async function DELETE(req: Request): Promise<Response> {
-  try {
-    const { id } = await req.json();
-    const session = await getSession();
-    if (!session) {
-      return Response.json({ message: "User not found" }, { status: 404 });
-    }
-    await prisma.tasks.delete({ where: { id } });
-    return Response.json(
-      { message: "Task deleted successfully" },
-      { status: 200 },
+  const body = await req.json();
+  const parseResult = taskInsertSchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { message: parseResult.error.message },
+      { status: 400 },
     );
-  } catch (error) {
-    console.log(error);
-    return Response.json({ message: "Something went wrong" }, { status: 500 });
   }
-}
+
+  const currCol = await db.query.columns.findFirst({
+    where: eq(columns.id, parseResult.data.column),
+    with: {
+      board: true,
+    },
+  });
+
+  if (!currCol) {
+    return NextResponse.json({ message: "Column not found" }, { status: 404 });
+  }
+
+  if (!currCol.board && currCol.board.owner !== user.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const [task] = await db.insert(tasks).values(parseResult.data).returning();
+
+  return NextResponse.json(task);
+});
+
+export const PUT = auth(async (req) => {
+  const user = req.auth?.user;
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const res = taskUpdateSchema.safeParse(body);
+  if (!res.success) {
+    return NextResponse.json(
+      { message: res.error.issues[0].message },
+      { status: 400 },
+    );
+  }
+
+  const currTask = await db.query.tasks.findFirst({
+    where: eq(tasks.id, res.data.id!),
+    with: {
+      column: {
+        with: {
+          board: true,
+        },
+      },
+    },
+  });
+
+  if (!currTask) {
+    return NextResponse.json({ message: "Task not found" }, { status: 404 });
+  }
+
+  if (currTask.column.board.owner !== user.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  await db.update(tasks).set(res.data).where(eq(tasks.id, res.data.id!));
+
+  return new Response(null, { status: 204 });
+});
+
+export const DELETE = auth(async (req) => {
+  const user = req.auth?.user;
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const searchParams = req.nextUrl.searchParams;
+  const taskId = searchParams.get("id");
+  if (!taskId) {
+    return NextResponse.json({ message: "Task id not found" }, { status: 400 });
+  }
+
+  const currTask = await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+    with: {
+      column: {
+        with: {
+          board: true,
+        },
+      },
+    },
+  });
+
+  if (!currTask) {
+    return NextResponse.json({ message: "Task not found" }, { status: 404 });
+  }
+
+  if (currTask.column.board.owner !== user.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  await db.transaction(async (tx) => {
+    await Promise.all([
+      tx.delete(tasks).where(eq(tasks.id, taskId)),
+      tx
+        .update(tasks)
+        .set({ index: sql`${tasks.index} - 1` })
+        .where(
+          and(
+            eq(tasks.column, currTask.column.id),
+            gt(tasks.index, currTask.index),
+          ),
+        ),
+    ]);
+  });
+
+  return new Response(null, { status: 204 });
+});
