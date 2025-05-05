@@ -31,6 +31,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function AppSidebar() {
   const { data: userBoards, isLoading, mutate } = useSWR("/api/board", fetcher);
@@ -110,7 +111,7 @@ export function AppSidebar() {
                         asChild
                         isActive={board.id === parseInt(boardId)}
                       >
-                        <a href={`/boards/${board.id}`}>{board.name}</a>
+                        <Link href={`/boards/${board.id}`}>{board.name}</Link>
                       </SidebarMenuButton>
                       <SidebarMenuAction
                         onClick={() => handlePin(board.id, false)}
@@ -134,7 +135,7 @@ export function AppSidebar() {
                         asChild
                         isActive={board.id === parseInt(boardId)}
                       >
-                        <a href={`/boards/${board.id}`}>{board.name}</a>
+                        <Link href={`/boards/${board.id}`}>{board.name}</Link>
                       </SidebarMenuButton>
                       <SidebarMenuAction
                         onClick={() => handlePin(board.id, true)}

@@ -8,7 +8,7 @@ export default function NotFound() {
       <main className="flex-1 container flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="flex flex-col items-center max-w-md">
           <div className="flex items-center justify-center rounded-full bg-muted p-4 mb-6">
-            <AlertCircle className="text-muted-foreground h-12 w-12" />
+            eAlertCircle className="text-muted-foreground h-12 w-12" />
           </div>
           <h1 className="text-3xl font-bold mb-2">Board not found</h1>
           <p className="text-muted-foreground mb-8">
