@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Login | Taskly",
+  title: "Login | Boardit",
 };
 
 export default async function Login() {
@@ -47,7 +47,7 @@ export default async function Login() {
         </CardContent>
         <CardFooter>
           <p className="text-center text-muted-foreground text-sm">
-            By using Taskly, you agree to our Terms of Service
+            By using Boardit, you agree to our Terms of Service
           </p>
         </CardFooter>
       </Card>

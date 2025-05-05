@@ -16,7 +16,7 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
-          <span className="font-bold text-xl">Taskly</span>
+          <span className="font-bold text-xl">Boardit</span>
           <div className="flex items-center gap-4">
             <Link href="/boards" className="text-sm font-medium">
               Dashboard
@@ -34,7 +34,7 @@ export default async function Home() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Organize your workflow with Taskly
+                  Organize your workflow with Boardit
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
                   A flexible Kanban board that adapts to your workflow. Create

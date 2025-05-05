@@ -22,7 +22,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
       <main className="flex flex-col w-full">
         <header className="sticky top-0 z-50 w-full h-16 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between">
           <SidebarTrigger />
-          <h1 className="font-bold text-2xl">Taskly</h1>
+          <h1 className="font-bold text-2xl">Boardit</h1>
           <div className="flex flex-row items-center gap-4">
             <ThemeToggle />
             <Avatar>

@@ -25,7 +25,7 @@ export default function RootLayout({
           {children}
           <footer className="w-full border-t py-6">
             <p className="text-center text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Taskly. All rights reserved.
+              © {new Date().getFullYear()} Boardit. All rights reserved.
             </p>
           </footer>
           <Toaster />
