@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Task Manager",
+  title: "BoardIt",
   description: "Create and manage your tasks",
 };
 

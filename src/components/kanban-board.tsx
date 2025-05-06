@@ -131,8 +131,6 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           });
       }, 500);
       return () => clearTimeout(timeOut);
-    } else {
-      setCurrTask(null);
     }
   }, [currTask]);
 
@@ -504,6 +502,11 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     }
   };
 
+  const closeTaskSheet = () => {
+    setCurrTask(null);
+    window.history.replaceState(null, "", pathname);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-row items-center justify-between px-1 mb-4">
@@ -584,7 +587,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Sheet open={currTask !== null} onOpenChange={() => setCurrTask(null)}>
+      <Sheet open={currTask !== null} onOpenChange={closeTaskSheet}>
         <SheetContent className="md:min-w-[600px] h-full">
           <SheetHeader className="my-8 bg h-[70%]">
             <SheetTitle>

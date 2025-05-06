@@ -15,7 +15,6 @@ export default function KanbanTask({ task }: { task: Task }) {
     transition,
     isDragging,
   } = useSortable({ id: task.id });
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -29,7 +28,7 @@ export default function KanbanTask({ task }: { task: Task }) {
 
     const params = new URLSearchParams(searchParams);
     params.set("task", task.id.toString());
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   };
 
   return (

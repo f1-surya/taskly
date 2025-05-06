@@ -4,6 +4,25 @@ import { db } from "@/db";
 import { auth } from "auth";
 import { and, eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
+import type { Metadata, ResolvingMetadata } from "next";
+
+type Props = {
+  params: Promise<{ board: string }>;
+};
+
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  const { board } = await params;
+
+  const currBoard = await db
+    .select({ name: boards.name })
+    .from(boards)
+    .where(eq(boards.id, parseInt(board)));
+
+  return { title: currBoard[0].name + " | BoardIt" };
+}
 
 export default async function Tasks({
   params,

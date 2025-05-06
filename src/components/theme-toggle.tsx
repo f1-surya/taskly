@@ -15,8 +15,9 @@ export default function ThemeToggle() {
     }
   }
   return (
-    <Button size="icon" onClick={toggle}>
-      {resolvedTheme === "dark" ? <Sun /> : <Moon />}
+    <Button variant="outline" size="icon" onClick={toggle}>
+      <Sun className="scale-100 dark:scale-0" />
+      <Moon className="absolute scale-0 dark:scale-100" />
     </Button>
   );
 }
