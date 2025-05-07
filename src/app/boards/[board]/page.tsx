@@ -55,8 +55,8 @@ export default async function Tasks({
   if (!currBoard) notFound();
 
   return (
-    <div className="h-screen p-4">
+    <main className="h-screen p-4">
       <KanbanBoard currBoard={currBoard} />
-    </div>
+    </main>
   );
 }

@@ -16,11 +16,8 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
-          <span className="font-bold text-xl">Boardit</span>
+          <span className="font-bold text-xl">BoardIt</span>
           <div className="flex items-center gap-4">
-            <Link href="/boards" className="text-sm font-medium">
-              Dashboard
-            </Link>
             <ThemeToggle />
             <Link href="/boards">
               <Button>Get Started</Button>
@@ -34,7 +31,7 @@ export default async function Home() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Organize your workflow with Boardit
+                  Organize your workflow with BoardIt
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
                   A flexible Kanban board that adapts to your workflow. Create
@@ -53,7 +50,7 @@ export default async function Home() {
             <div className="flex items-center justify-center">
               <div className="relative w-full overflow-hidden rounded-xl border bg-muted/50 p-2 shadow-xl lg:p-6">
                 <Image
-                  src="/placeholder.svg?height=600&width=800"
+                  src="/board.png"
                   alt="Kanban board screenshot"
                   width={700}
                   height={500}
@@ -118,7 +115,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      <section className="w-full py-12 md:py-24 lg:py-32">
+      <section className="w-full px-4 py-12 md:py-24 lg:py-32">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">

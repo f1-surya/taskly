@@ -15,7 +15,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <body className="flex flex-col h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -23,7 +24,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <footer className="w-full border-t py-6">
+          <footer className="border-t py-6">
             <p className="text-center text-sm text-muted-foreground">
               © {new Date().getFullYear()} Boardit. All rights reserved.
             </p>

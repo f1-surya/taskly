@@ -23,7 +23,7 @@ export default async function Login() {
   }
 
   return (
-    <main className="flex h-screen w-full items-center justify-center">
+    <main className="flex flex-1 w-full items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome</CardTitle>

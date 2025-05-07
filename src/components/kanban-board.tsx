@@ -44,6 +44,7 @@ import {
   SheetTitle,
 } from "./ui/sheet";
 import { Textarea } from "./ui/textarea";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
 interface BoardProps {
   currBoard: BoardWithColumns;
@@ -511,7 +512,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
     <div className="flex flex-col h-full">
       <div className="flex flex-row items-center justify-between px-1 mb-4">
         <input
-          className="text-2xl font-medium focus:outline-none"
+          className="text-2xl font-medium focus:outline-none w-[45%] md:w-[50%]"
           value={boardName}
           onChange={(e) => setBoardName(e.target.value)}
         />
@@ -529,35 +530,38 @@ export function KanbanBoard({ currBoard }: BoardProps) {
           />
         )}
       </AnimatePresence>
-      <DndContext
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDragEnd={onDragEnd}
-      >
-        <div className="flex gap-4 overflow-x-auto snap-x pb-4 h-[90%]">
-          <SortableContext items={cols.map((col) => col.id)}>
-            {cols.map((col) => (
+      <ScrollArea>
+        <DndContext
+          sensors={sensors}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+        >
+          <div className="flex space-x-4 snap-x h-[80vh]">
+            <SortableContext items={cols.map((col) => col.id)}>
+              {cols.map((col) => (
+                <KanbanColumn
+                  key={col.id}
+                  column={col}
+                  action={saveTask}
+                  onDelete={onDeleteCol}
+                />
+              ))}
+            </SortableContext>
+          </div>
+          <ScrollBar orientation="horizontal" />
+          <DragOverlay>
+            {activeCol && (
               <KanbanColumn
-                key={col.id}
-                column={col}
+                column={activeCol}
                 action={saveTask}
                 onDelete={onDeleteCol}
               />
-            ))}
-          </SortableContext>
-        </div>
-        <DragOverlay>
-          {activeCol && (
-            <KanbanColumn
-              column={activeCol}
-              action={saveTask}
-              onDelete={onDeleteCol}
-            />
-          )}
-          {activeTask && <KanbanTask task={activeTask} />}
-        </DragOverlay>
-      </DndContext>
+            )}
+            {activeTask && <KanbanTask task={activeTask} />}
+          </DragOverlay>
+        </DndContext>
+      </ScrollArea>
       <AlertDialog
         open={colToDelete !== null}
         onOpenChange={() => setColToDelete(null)}
