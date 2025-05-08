@@ -38,7 +38,7 @@ export default function KanbanTask({ task }: { task: Task }) {
       {...listeners}
       style={style}
       className={cn(
-        "shadow-sm touch-manipulation cursor-pointer",
+        "shadow-sm touch-none cursor-pointer",
         isDragging && "opacity-70 shadow-md",
       )}
       onClick={handleClick}

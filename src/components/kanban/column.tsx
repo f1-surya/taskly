@@ -60,7 +60,7 @@ export default function KanbanColumn({
         <div className="flex items-center gap-2">
           <GripVertical
             className={cn(
-              "h-4 w-4 cursor-grab text-muted-foreground",
+              "h-4 w-4 cursor-grab text-muted-foreground touch-none",
               isDragging && "cursor-grabbing",
             )}
             {...listeners}
