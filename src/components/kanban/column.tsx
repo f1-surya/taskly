@@ -51,7 +51,7 @@ export default function KanbanColumn({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex flex-col rounded-lg border bg-card flex-shrink-0 snap-center p-2 w-72 h-[95%]",
+        "flex flex-col rounded-lg border bg-card flex-shrink-0 snap-center p-2 w-72",
         isDragging && "opacity-70 shadow-lg",
       )}
       {...attributes}

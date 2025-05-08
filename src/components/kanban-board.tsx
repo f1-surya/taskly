@@ -592,7 +592,7 @@ export function KanbanBoard({ currBoard }: BoardProps) {
         </AlertDialogContent>
       </AlertDialog>
       <Sheet open={currTask !== null} onOpenChange={closeTaskSheet}>
-        <SheetContent className="md:min-w-[600px] h-full">
+        <SheetContent className="w-sm md:min-w-xl h-full">
           <SheetHeader className="my-8 bg h-[70%]">
             <SheetTitle>
               <Input
